@@ -1,0 +1,251 @@
+.faculty-view {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Title */
+  .faculty-view .title .text {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  /* Filters */
+  .faculty-view .filters {
+    margin-bottom: 2rem;
+  }
+  
+  .faculty-view .filter-grid {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping to the next line */
+    gap: 1rem; /* Space between filter items */
+  }
+  
+  .faculty-view .filter-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex: 1 1 45%; /* Flexible width, min width of 45% */
+    min-width: 250px; /* Ensures a minimum width */
+    max-width: 48%; /* Optional, to avoid excessively wide inputs */
+    margin-bottom: 0.5rem; /* Spacing between rows */
+  }
+  
+  .faculty-view .filter-item label {
+    flex-shrink: 0; /* Prevent label from shrinking */
+    margin-right: 0.5rem; /* Space between label and input */
+    white-space: nowrap; /* Prevent label text wrapping */
+    font-weight: bold;
+  }
+  
+  .faculty-view .filter-item input {
+    flex-grow: 1; /* Input takes up remaining space */
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  /* Buttons */
+  .faculty-view button.btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: auto; /* Make buttons auto width */
+    text-align: center;
+  }
+  
+  .faculty-view button.btn.apply {
+    background-color: #4CAF50; /* Green */
+    color: white;
+  }
+  
+  .faculty-view button.btn.apply:hover {
+    background-color: #45a049;
+  }
+  
+  .faculty-view button.btn.clear {
+    background-color: #f44336; /* Red */
+    color: white;
+  }
+  
+  .faculty-view button.btn.clear:hover {
+    background-color: #e53935;
+  }
+  
+  .faculty-view button.btn:focus {
+    outline: none;
+  }
+  
+  .faculty-view .button-container {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+  }
+  
+  /* Table Styles */
+  .faculty-view .asset-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  
+  .faculty-view .asset-table th, .faculty-view .asset-table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+  }
+  
+  .faculty-view .asset-table th {
+    background-color: green; /* Green header */
+    color: white;
+  }
+  
+  .faculty-view .asset-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  .faculty-view .asset-table tr:hover {
+    background-color: #ddd;
+  }
+  
+  /* Popup Styles */
+  .faculty-view .popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 90%; /* Adjusted to fit within the screen */
+    max-width: 500px;
+    max-height: 80%; /* Limit the height of the popup */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows */
+    z-index: 1000;
+    padding: 20px;
+  }
+  
+  .faculty-view .popup-content {
+    text-align: center;
+  }
+  
+  .faculty-view .popup-content h3 {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    color: #333;
+  }
+  
+  .faculty-view .popup-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .faculty-view .popup-content table th {
+    background-color: #007BFF; /* Blue header */
+    color: white;
+    padding: 10px;
+    text-align: left;
+  }
+  
+  .faculty-view .popup-content table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .faculty-view .popup-content button {
+    background-color: #FF4C4C; /* Red close button */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+  }
+  
+  .faculty-view .popup-content td {
+    vertical-align: top;
+    word-wrap: break-word;
+  }
+  
+  .faculty-view .popup-content button:hover {
+    background-color: #E04343; /* Slightly darker red on hover */
+  }
+  
+  .faculty-view .popup-content button:active {
+    background-color: #CC3A3A; /* Even darker red on click */
+  }
+  
+  /* Scrollbar styling for better appearance */
+  .faculty-view .popup::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  .faculty-view .popup::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  .faculty-view .popup::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .faculty-view .popup::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  
+  .filter-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    max-width: 100%;
+    margin: auto;
+  }
+  
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    width: 100%;
+  }
+  
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 30px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .clear {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .generate {
+    background-color: #11b555;
+    color: white;
+  }
+  
