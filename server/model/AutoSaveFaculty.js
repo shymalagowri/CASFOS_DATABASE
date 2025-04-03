@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Define domainOptions directly or import from a shared file
 const domainOptions = {
   "Forest & Wildlife": [
     "Silviculture",
@@ -100,241 +99,109 @@ const domainOptions = {
     "Others"
   ]
 };
-
 const AutoSaveFacultySchema = new mongoose.Schema({
-  _id: { // Kept as staffid from frontend, renamed from previous _id
+  staffid: {
     type: String,
-    required: true,
-    trim: true
-  },
-  facultyType: { 
-    type: String, 
     required: true,
     trim: true,
-    enum: ['internal', 'external']
   },
-  name: { 
+  facultyType: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    enum: ['internal', 'external', 'contract'],
   },
-  cadre: { 
-    type: String,
-    trim: true
-  },
-  yearOfAllotment: { 
-    type: String,
-    match: /^[0-9]{4}$/,
-    trim: true
-  },
-  rrSfsDate: { 
-    type: Date 
-  },
-  dateOfJoining: { 
-    type: Date 
-  },
-  dateOfRelieve: { 
-    type: Date 
-  },
-  dateOfBirth: { 
-    type: Date 
-  },
-  mobileNumber: { 
-    type: String,
-    match: /^[6-9]\d{9}$/,
-    trim: true
-  },
-  communicationAddress: { 
-    type: String,
-    trim: true
-  },
-  permanentAddress: {
-    type: String,
-    trim: true
-  },
-  email: { 
+  name: { type: String, trim: true, default: '' },
+  cadre: { type: String, trim: true, default: '' },
+  yearOfAllotment: { type: String, match: /^[0-9]{4}$/, trim: true, default: '' },
+  rrSfsDate: { type: Date, default: null },
+  dateOfJoining: { type: Date, default: null },
+  dateOfRelieve: { type: Date, default: null },
+  dateOfBirth: { type: Date, default: null },
+  mobileNumber: { type: String, match: /^[6-9]\d{9}$/, trim: true, default: '' },
+  communicationAddress: { type: String, trim: true, default: '' },
+  permanentAddress: { type: String, trim: true, default: '' },
+  email: {
     type: String,
     trim: true,
     lowercase: true,
-    match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
+    match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
+    default: '',
   },
-  photograph: { 
-    type: String,
-    default: null // Consistent with controller handling
-  },
-  presentPlaceOfWorking: { 
-    type: String,
-    trim: true
-  },
-  status: { 
-    type: String,
-    trim: true,
-    enum: ['retired', 'serving'],
-    required: true,
-    default: 'serving' // Added default per controller logic
-  },
-  conduct: { 
-    type: String,
-    trim: true,
-    default: '' // Added default per controller logic
-  },
-  modulesHandled: [{ 
-    type: String,
-    trim: true,
-    default: [] // Added default per controller logic
-  }],
-  majorDomains: [{
-    type: String,
-    trim: true,
-    enum: Object.keys(domainOptions) // Use major domain keys
-  }],
-  minorDomains: [{
-    type: String,
-    trim: true,
-    enum: Object.values(domainOptions).flat() // Use all minor domain values
-  }],
-  areasOfExpertise: { 
-    type: String,
-    trim: true
-  },
-  awardsReceived: { 
-    type: String,
-    trim: true
-  },
-  inServiceTrainingHandled: { 
-    type: String,
-    trim: true
-  },
+  photograph: { type: String, default: null },
+  presentPlaceOfWorking: { type: String, trim: true, default: '' },
+  status: { type: String, enum: ['retired', 'serving'], default: 'serving' },
+  conduct: { type: String, trim: true, default: '' },
+  modulesHandled: { type: [String], default: [] },
+  majorDomains: { type: [String], enum: Object.keys(domainOptions), default: [] },
+  minorDomains: { type: [String], enum: Object.values(domainOptions).flat(), default: [] },
+  areasOfExpertise: { type: String, trim: true, default: '' },
+  awardsReceived: { type: String, trim: true, default: '' },
+  inServiceTrainingHandled: { type: String, trim: true, default: '' },
   publications: [{
     typeOfPublication: {
       type: String,
-      required: true,
-      enum: ['Books Published', 'Articles Published', 'Manuals', 'Others']
+      enum: ['Books Published', 'Articles Published', 'Manuals', 'Others'],
+      default: 'Others',
     },
-    title: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    dateOfPublication: {
-      type: Date,
-      required: true
-    },
-    additionalDetails: {
-      type: String,
-      trim: true
-    }
+    title: { type: String, trim: true, default: '' },
+    dateOfPublication: { type: Date, default: null },
+    additionalDetails: { type: String, trim: true, default: '' },
   }],
   educationDetails: [{
-    degree: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    specialization: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    institutionName: {
-      type: String,
-      required: true,
-      trim: true
-    }
+    degree: { type: String, trim: true, default: '' },
+    specialization: { type: String, trim: true, default: '' },
+    institutionName: { type: String, trim: true, default: '' },
   }],
   coursesHandled: [{
     courseType: {
       type: String,
-      required: true,
-      enum: [
-        'InductionTraining',
-        'InserviceTraining',
-        'OtherStakeholder',
-        'SpecialTraining',
-        'SpecialLecture',
-        'Tours',
-        'Others'
-      ]
+      enum: ['InductionTraining', 'InserviceTraining', 'OtherStakeholder', 'SpecialTraining', 'SpecialLecture', 'Tours', 'Others', ''],
+      default: '',
     },
-    batchno: {
-      type: Number,
-      required: true
-    },
-    title: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    feedbackRating: {
-      type: Number,
-      min: 1,
-      max: 10
-    },
-    feedbackRatings: {
-      type: String,
-      enum: ['poor', 'good', 'verygood', 'excellent', '']
-    },
-    otherCourseType: {
-      type: String,
-      trim: true
-    }
+    batchno: { type: Number, default: null },
+    title: { type: String, trim: true, default: '' },
+    feedbackRating: { type: Number, min: 1, max: 10, default: null },
+    feedbackRatings: { type: String, enum: ['poor', 'good', 'verygood', 'excellent', ''], default: '' },
+    otherCourseType: { type: String, trim: true, default: '' },
   }],
   toursAttended: [{
-    activityType: {
-      type: String,
-      enum: ['FieldExercise', 'StudyTour']
-    },
-    days: Number,
-    startDate: Date,
-    endDate: Date,
-    fieldExerciseName: { type: String, trim: true },
-    batchNumber: {
-      type: Number,
-      required: true
-    },
-    location: { type: String, trim: true },
-    remarks: { type: String, trim: true },
-    region: { type: String, trim: true }
+    activityType: { type: String, enum: ['FieldExercise', 'StudyTour'], default: null },
+    days: { type: Number, default: null },
+    startDate: { type: Date, default: null },
+    endDate: { type: Date, default: null },
+    fieldExerciseName: { type: String, trim: true, default: '' },
+    batchNumber: { type: Number, default: null },
+    location: { type: String, trim: true, default: '' },
+    remarks: { type: String, trim: true, default: '' },
+    region: { type: String, trim: true, default: '' },
   }],
   examiner: [{
-    batchNo: { type: Number },
-    year: { type: Number },
-    batchType: { type: String, trim: true },
-    date: { type: Date },
-    paperCorrected: { type: String, trim: true }
+    batchNo: { type: Number, default: null },
+    year: { type: Number, default: null },
+    batchType: { type: String, trim: true, default: '' },
+    date: { type: Date, default: null },
+    paperCorrected: { type: String, trim: true, default: '' },
   }],
   specialSessions: [{
-    institutionname: {
-      type: String,
-      trim: true
-    },
-    topic: {
-      type: String,
-      trim: true
-    },
-    date: { type: Date },
-    feedbackRating: { type: Number },
-    feedbackRating1: { type: String, trim: true }
+    institutionname: { type: String, trim: true, default: '' },
+    topic: { type: String, trim: true, default: '' },
+    date: { type: Date, default: null },
+    feedbackRating: { type: Number, default: null },
+    feedbackRating1: { type: String, trim: true, default: '' },
   }],
-  institution: { 
-    type: String,
-    trim: true
-  },
+  institution: { type: String, trim: true, default: '' },
   otherResponsibilities: [{
-    responsibility: {
-      type: String,
-      trim: true
-    }
+    responsibility: { type: String, trim: true, default: '' },
   }],
-  joined: { 
-    type: Date, 
+  joined: {
+    type: Date,
     default: () => {
       let date = new Date();
       let istOffset = 5.5 * 60 * 60 * 1000;
       return new Date(date.getTime() + istOffset);
-    } 
-  }
-  // Note: staffid is already represented as _id, so no separate field added
+    },
+  },
 });
 
 module.exports = mongoose.model('AutoSaveFaculty', AutoSaveFacultySchema);

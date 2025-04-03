@@ -8,10 +8,7 @@ const StoreConsumableSchema = new mongoose.Schema({
     required: true,
     minlength: 2,
     maxlength: 50,
-    validate: {
-      validator: validateAssetCategory("Consumable"),
-      message: (props) => `${props.value} is not a valid asset category for Consumable assets!`,
-    },
+    
   },
   itemName: {
     type: String,
@@ -27,12 +24,6 @@ const StoreConsumableSchema = new mongoose.Schema({
   },
   subCategory: {
     type: String,
-    validate: {
-      validator: function (value) {
-        return validateSubCategory(this.assetCategory)(value);
-      },
-      message: (props) => `${props.value} is not a valid subCategory for assetCategory ${props.instance.assetCategory}!`,
-    },
   },
   itemDescription: {
     type: String,

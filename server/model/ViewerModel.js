@@ -1,31 +1,58 @@
 const mongoose = require('mongoose');
 
-const ViewerSchema = new mongoose.Schema({
-    name: { type: String, required: true, trim: true },
-    dob: { type: Date, required: true },
-    designation: { type: String, required: true, trim: true },
-    phone: { 
-        type: String, 
-        required: true, 
-        match: /^[0-9]{10}$/  
-    },
-    access: { 
-        type: [String],  // Array of strings to store the selected access types
-        default: [],
-    },
-    organization: { type: String, required: true, trim: true },
-    ministry: { type: String, required: true, trim: true },
-    role: { type: String, default: "viewer" }, // Viewer role is fixed
-    password: { type: String, required: true, minlength: 6 },
-    joined: { 
-        type: Date, 
-        default: () => {
-            let date = new Date();
-            let istOffset = 5.5 * 60 * 60 * 1000;
-            return new Date(date.getTime() + istOffset);
-        }
-    }
+const viewerSchema = new mongoose.Schema({
+  name: { 
+    type: String, 
+    required: [true, "Please Enter a Name"], 
+    trim: true, 
+    maxlength: 50 
+  },
+  password: { 
+    type: String, 
+    required: [true, "Please Enter a Password"], 
+    minlength: 6 
+  },
+  role: { 
+    type: String, 
+    required: true, 
+    default: 'viewer' 
+  },
+  dob: { 
+    type: Date, 
+    required: false 
+  },
+  designation: { 
+    type: String, 
+    required: false, 
+    trim: true 
+  },
+  phone: { 
+    type: String, 
+    required: false, 
+    match: /^[0-9]{10}$/ 
+  },
+  organization: { 
+    type: String, 
+    required: false, 
+    trim: true 
+  },
+  ministry: { 
+    type: String, 
+    required: false, 
+    trim: true 
+  },
+  access: { 
+    type: [String], 
+    required: false, 
+    default: [], 
+    enum: ['IT', 'Store', 'Electrical', 'Furniture', 'all'] 
+  },
+  joined: { 
+    type: Date, 
+    required: false, 
+    default: () => new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000) 
+  }
 });
 
-const ViewerModel = mongoose.model('viewerlogin', ViewerSchema);
+const ViewerModel = mongoose.model('viewerlogin', viewerSchema);
 module.exports = ViewerModel;

@@ -9,7 +9,7 @@ const AssetReturn = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
-
+  const [issuedLocations, setIssuedLocations] = useState([]); // Add this line after other useState declarations
   const [assetType, setAssetType] = useState("Permanent");
   const [assetCategory, setAssetCategory] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
@@ -19,9 +19,31 @@ const AssetReturn = () => {
 
   const permanentAssetOptions = ["Furniture", "Vehicle", "Building", "Instruments", "Sports and Goods", "Fabrics", "Electrical", "Electronics", "Photograph Items", "Land", "ICT Goods"];
   const consumableAssetOptions = ["Stationery", "IT", "Electrical", "Plumbing", "Glassware/Laboratory Items", "Sanitory Items", "Sports Goods", "Fabrics", "Instruments"];
-  const issuedToOptions = ["faculty_chamber", "officer_quarters", "staff_quarters", "corbett_hall", "champion_hall", "gis_lab", "van_vatika", "hostel", "officers_mess", "van_sakthi", "library", "classroom", "office_room", "officers_lounge", "gymnasium"];
-  const conditionOptions = ["Good", "Servicable"];
-
+  const conditionOptions = ["Good", "To Be Serviced"];
+  useEffect(() => {
+    if (assetType && assetCategory && selectedItem) {
+      const [itemName, subCategory, itemDescription] = selectedItem.split(" - ");
+      console.log("itemname:",itemName);
+      console.log("subCategory:",subCategory);
+      console.log("itemDescripton:",itemDescription);
+      const fetchIssuedLocations = async () => {
+        try {
+          const response = await axios.post("http://localhost:3001/api/assets/getIssuedLocations", {
+            assetType,
+            assetCategory,
+            itemName,
+            subCategory,
+            itemDescription,
+          });
+          setIssuedLocations(response.data.locations || []);
+        } catch (error) {
+          console.error("Failed to fetch issued locations:", error);
+          setIssuedLocations([]);
+        }
+      };
+      fetchIssuedLocations();
+    }
+  }, [assetType, assetCategory, selectedItem]);
   useEffect(() => {
     if (assetType && assetCategory) {
       const fetchStoreItems = async () => {
@@ -141,6 +163,7 @@ const AssetReturn = () => {
     setSelectedItem("");
     setReturnItem({ location: "", returnQuantity: 0, condition: "", issuedQuantity: 0, returnIds: [] });
     setIssuedIds([]);
+    setIssuedLocations([]); // Add this line
   };
 
   return (
@@ -158,14 +181,13 @@ const AssetReturn = () => {
           <span className="text">DATA ENTRY STAFF</span>
         </a>
         <ul className="side-menu top">
-          <li><a href={`/dataentrydashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-          <li><a href={`/assetstore?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Store</span></a></li>
-          <li><a href={`/assetissue?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset Issue</span></a></li>
-          <li className="active"><a href={`/assetreturn?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Asset Return</span></a></li>
-          <li><a href={`/rejectedassets?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Rejected Assets</span></a></li>
-          <li><a href={`/facultyentry?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty Entry</span></a></li>
-          <li><a href={`/facultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty Updation</span></a></li>
-        </ul>
+            <li className="active"><a href={`/assetentrydashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
+            <li ><a href={`/assetstore?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Store</span></a></li>
+            <li><a href={`/assetissue?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset Issue</span></a></li>
+            <li><a href={`/assetreturn?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Asset Return</span></a></li>
+            <li><a href={`/viewasset?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Asset View</span></a></li>
+          </ul>
+
         <ul className="side-menu">
           <li><a href="/" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></a></li>
         </ul>
@@ -184,7 +206,7 @@ const AssetReturn = () => {
 
         <main>
           <div style={styles.container}>
-            <h2>Asset Return System</h2>
+            <h2>Asset Management System</h2>
             <div style={styles.formContainer}>
               <div style={styles.formRow}>
                 <div style={styles.inputGroup}>
@@ -216,17 +238,17 @@ const AssetReturn = () => {
                 </div>
               </div>
               <div style={styles.formRow}>
-                <div style={styles.inputGroup}>
-                  <label>Location:</label>
-                  <select value={returnItem.location} onChange={(e) => handleReturnItemChange("location", e.target.value)} style={styles.input}>
-                    <option value="">Select Location</option>
-                    {issuedToOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option.replace("_", " ").split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div style={styles.inputGroup}>
+  <label>Location:</label>
+  <select value={returnItem.location} onChange={(e) => handleReturnItemChange("location", e.target.value)} style={styles.input}>
+    <option value="">Select Location</option>
+    {issuedLocations.map((location) => (  // Replace issuedToOptions with issuedLocations
+      <option key={location} value={location}>
+        {location}
+      </option>
+    ))}
+  </select>
+</div>
                 <div style={styles.inputGroup}>
                   <label>Issued Quantity:</label>
                   <input type="number" value={returnItem.issuedQuantity} disabled style={styles.input} />

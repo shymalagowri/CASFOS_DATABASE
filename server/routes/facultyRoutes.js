@@ -15,5 +15,5 @@ router.post("/filterFaculties", facultyController.getFilteredFaculty);
 router.get('/monthly',facultyController.getFacultyEntriesByMonth);
 router.get('/sessions',facultyController.getSessionsHandled);
 router.get('/search/:id',facultyController.getFacultyById);
-
+router.put('/verifyFaculty/:id', facultyController.verifyFaculty);
 module.exports = router;

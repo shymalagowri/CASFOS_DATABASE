@@ -10,10 +10,7 @@ const consumableSchema = new mongoose.Schema({
   assetCategory: {
     type: String,
     required: true,
-    validate: {
-      validator: validateAssetCategory("Consumable"),
-      message: (props) => `${props.value} is not a valid asset category for Consumable assets!`,
-    },
+    
   },
   entryDate: { type: Date, required: true },
   purchaseDate: { type: Date, required: true },
@@ -56,9 +53,15 @@ const consumableSchema = new mongoose.Schema({
       itemDescription: { type: String, required: true },
       quantityReceived: { type: Number, required: true },
       unitPrice: { type: Number, required: true },
-      overallPrice: { type: Number, required: true },
-      amcDate: { type: Date },
-      itemPhotoUrl: { type: String },
+      totalPrice: { type: Number },
+      amcFromDate: { type: Date, required: false },  // Add this
+      amcToDate: { type: Date, required: false },    // Add this
+      amcCost: { type: Number, required: false },    // Add this
+      amcPhotoUrl: { type: String, required: false }, 
+        itemPhotoUrl: { type: String },
+      warrantyNumber: { type: String },
+    warrantyValidUpto: { type: Date },
+    warrantyPhotoUrl: { type: String },
     },
   ],
 }, { timestamps: true });

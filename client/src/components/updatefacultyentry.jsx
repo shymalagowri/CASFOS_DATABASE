@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react"; // Added useEffect
+import { useLocation, useNavigate } from "react-router-dom"; // Added useNavigate
 import "../styles/facultymanagement.css";
 import "../styles/style.css";
 import axios from "axios";
@@ -14,11 +14,123 @@ const formatDate = (isoDate) => {
   return `${year}-${month}-${day}`;
 };
 
+// Domain options (unchanged)
+const domainOptions = {
+  "Forest & Wildlife": [
+    "Silviculture",
+    "Mensuration and Biometry",
+    "Non – Timber Forest Products and Medicinal plants",
+    "Tree Harvesting, Wood Science and Technology",
+    "Forest Survey & Engineering",
+    "Forest Health and Disaster Management",
+    "Forest-People Interface",
+    "Forest Policy and Law",
+    "Forest Resource Management",
+    "Wildlife Conservation & Management",
+    "Land Resources and Conservation",
+    "Economics of Forests and Natural Resources",
+    "Environmental Laws & Management",
+    "Applied Ecology and Biodiversity Conservation",
+    "Forest Administration and Accounts",
+    "General Biology/ Forest Botany & Taxonomy",
+    "Forest Statistics/Mathematics",
+    "Computer Application, Remote Sensing and GIS in Forestry",
+    "Urban Forestry/Recreation Forestry & Land Scaping",
+  ],
+  Environment: [
+    "Environmental Laws & Management",
+    "Climate Change: Adaptation & Mitigation",
+    "Wasteland Management",
+    "Environmental Economics & Accounting",
+    "Coastal Regulation Zone",
+    "Environmental Impact Assessment & Auditing",
+    "Ecosystem Services Valuation",
+    "Sustainable Development Goals",
+    "Green Energy",
+    "Ecosystem Health",
+    "Others",
+  ],
+  "Disaster Management": [
+    "Forest Fire Management & Damage assessment",
+    "Cyclone",
+    "Flood",
+    "Desertification",
+    "Others",
+  ],
+  "Human Resource Development": [
+    "Time Management",
+    "Leadership Management",
+    "Effective Leadership and Conflict Resolution",
+    "Communication Skills and Management",
+    "Crowd Management",
+    "Delegation and Interdepartmental Coordination",
+    "Emotional Intelligence",
+    "Gender Sensitization",
+    "Building competencies for personal Excellence",
+    "Others",
+  ],
+  "Health and Fitness": [
+    "First Aid",
+    "Counselling",
+    "Physical, mental and Social Health",
+    "Stress Management",
+    "Yoga and Meditation",
+    "Others",
+  ],
+  "Ethics and Public Governance": [
+    "Public administration, Public Grievance and Public Finance",
+    "Decision Making",
+    "Ethics in Governance",
+    "Anti-corruption Measures",
+    "Conflict Management",
+    "Transparency in working",
+    "Accountability",
+    "Public Relations, Crisis control",
+    "E-governance",
+    "Project Implementation and Management",
+    "Others",
+  ],
+  "Jurisprudence (Acts and Rules)": [
+    "The Bharatiya Nagarik Suraksha Sanhita (BNSS)",
+    "Bharatiya Nyaya Sanhita (BNS)",
+    "Bharatiya Sakshya Adhiniyam (BSA)",
+    "POSH Act, 2013",
+    "Right to Information (RTI) Act, 2005",
+    "Cyber Security Laws",
+    "Others",
+  ],
+  "CCS Rules and Regulation": [
+    "Service Rules and matters",
+    "Conduct Rules",
+    "Disciplinary Proceedings",
+    "Others",
+  ],
+  "Media Management": [
+    "The Art of Interacting with Print and Electronic Media",
+    "Role of Media",
+    "Media Relations and Image Management",
+    "Proactive Media Engagement",
+    "Social Media Management",
+    "Others",
+  ],
+};
+
 function UpdateFacultyEntry() {
   const location = useLocation();
+  const navigate = useNavigate(); // Added for navigation
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
   const { facultyData, isUpdate } = location.state || {};
+
+  // Log initial state for debugging
+  useEffect(() => {
+    console.log("location.state:", location.state);
+    console.log("facultyData:", facultyData);
+    console.log("isUpdate:", isUpdate);
+    if (isUpdate && !facultyData?._id) {
+      console.warn("No valid _id found in facultyData for update!");
+    }
+  }, [facultyData, isUpdate]);
 
   // Format dates from backend
   const formattedFacultyData = {
@@ -28,29 +140,29 @@ function UpdateFacultyEntry() {
     dateOfRelieve: formatDate(facultyData?.dateOfRelieve),
     dateOfBirth: formatDate(facultyData?.dateOfBirth),
     joined: formatDate(facultyData?.joined),
-    publications: facultyData?.publications?.map(pub => ({
+    publications: facultyData?.publications?.map((pub) => ({
       ...pub,
       dateOfPublication: formatDate(pub.dateOfPublication),
     })) || [],
-    coursesHandled: facultyData?.coursesHandled?.map(course => ({
+    coursesHandled: facultyData?.coursesHandled?.map((course) => ({
       ...course,
     })) || [],
-    toursAttended: facultyData?.toursAttended?.map(tour => ({
+    toursAttended: facultyData?.toursAttended?.map((tour) => ({
       ...tour,
       startDate: formatDate(tour.startDate),
       endDate: formatDate(tour.endDate),
     })) || [],
-    examiner: facultyData?.examiner?.map(exam => ({
+    examiner: facultyData?.examiner?.map((exam) => ({
       ...exam,
       date: formatDate(exam.date),
     })) || [],
-    specialSessions: facultyData?.specialSessions?.map(session => ({
+    specialSessions: facultyData?.specialSessions?.map((session) => ({
       ...session,
       date: formatDate(session.date),
     })) || [],
   };
 
-  const _id = formattedFacultyData._id;
+  const _id = formattedFacultyData?._id; // Ensure _id is defined
 
   // Initialize state with formatted faculty data
   const [facultyType, setFacultyType] = useState(formattedFacultyData?.facultyType || "");
@@ -86,8 +198,63 @@ function UpdateFacultyEntry() {
     joined: formattedFacultyData?.joined || "",
     staffid: formattedFacultyData?.staffid || "",
   });
+  const [errorMessage, setErrorMessage] = useState(""); // Added for error feedback
 
-  // Handlers for adding nested items
+  // State for domain expertise
+  const [domainExpertise, setDomainExpertise] = useState(() => {
+    if (formattedFacultyData?.majorDomains?.length > 0) {
+      return formattedFacultyData.majorDomains.map((major) => ({
+        major,
+        minors: formattedFacultyData.minorDomains?.filter((minor) =>
+          domainOptions[major]?.includes(minor)
+        ) || [],
+      }));
+    }
+    return [{ major: "", minors: [] }];
+  });
+
+  // Handlers for domain expertise (unchanged)
+  const handleMajorDomainChange = (index, value) => {
+    const updatedExpertise = [...domainExpertise];
+    updatedExpertise[index] = { major: value, minors: [] };
+    setDomainExpertise(updatedExpertise);
+    updateFacultyDomains(updatedExpertise);
+  };
+
+  const handleMinorDomainChange = (index, subDomain, checked) => {
+    const updatedExpertise = [...domainExpertise];
+    if (checked) {
+      updatedExpertise[index].minors = [...updatedExpertise[index].minors, subDomain];
+    } else {
+      updatedExpertise[index].minors = updatedExpertise[index].minors.filter(
+        (d) => d !== subDomain
+      );
+    }
+    setDomainExpertise(updatedExpertise);
+    updateFacultyDomains(updatedExpertise);
+  };
+
+  const updateFacultyDomains = (expertise) => {
+    const majorDomains = expertise.map((e) => e.major).filter(Boolean);
+    const minorDomains = expertise.flatMap((e) => e.minors);
+    setFacultyDetails((prev) => ({
+      ...prev,
+      majorDomains,
+      minorDomains,
+    }));
+  };
+
+  const handleAddDomainExpertise = () => {
+    setDomainExpertise([...domainExpertise, { major: "", minors: [] }]);
+  };
+
+  const handleRemoveDomainExpertise = (index) => {
+    const updatedExpertise = domainExpertise.filter((_, i) => i !== index);
+    setDomainExpertise(updatedExpertise);
+    updateFacultyDomains(updatedExpertise);
+  };
+
+  // Handlers for adding nested items (unchanged)
   const handleAddPublication = () => {
     setFacultyDetails({
       ...facultyDetails,
@@ -113,7 +280,14 @@ function UpdateFacultyEntry() {
       ...facultyDetails,
       coursesHandled: [
         ...facultyDetails.coursesHandled,
-        { courseType: "", batchno: "", title: "", feedbackRating: "", feedbackRatings: "", otherCourseType: "" },
+        {
+          courseType: "",
+          batchno: "",
+          title: "",
+          feedbackRating: "",
+          feedbackRatings: "",
+          otherCourseType: "",
+        },
       ],
     });
   };
@@ -123,7 +297,17 @@ function UpdateFacultyEntry() {
       ...facultyDetails,
       toursAttended: [
         ...facultyDetails.toursAttended,
-        { activityType: "", days: "", startDate: "", endDate: "", fieldExerciseName: "", batchNumber: "", location: "", remarks: "", region: "" },
+        {
+          activityType: "",
+          days: "",
+          startDate: "",
+          endDate: "",
+          fieldExerciseName: "",
+          batchNumber: "",
+          location: "",
+          remarks: "",
+          region: "",
+        },
       ],
     });
   };
@@ -151,14 +335,11 @@ function UpdateFacultyEntry() {
   const handleAddResponsibility = () => {
     setFacultyDetails({
       ...facultyDetails,
-      otherResponsibilities: [
-        ...facultyDetails.otherResponsibilities,
-        { responsibility: "" },
-      ],
+      otherResponsibilities: [...facultyDetails.otherResponsibilities, { responsibility: "" }],
     });
   };
 
-  // Handlers for removing nested items
+  // Handlers for removing nested items (unchanged)
   const handleRemovePublication = (index) => {
     setFacultyDetails({
       ...facultyDetails,
@@ -208,7 +389,7 @@ function UpdateFacultyEntry() {
     });
   };
 
-  // Handlers for input changes
+  // Handlers for input changes (unchanged)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -223,7 +404,8 @@ function UpdateFacultyEntry() {
 
   const handleArrayInputChange = (e, field) => {
     const { value } = e.target;
-    setFacultyDetails({ ...facultyDetails, [field]: value.split(",").map(item => item.trim()) });
+    const flatArray = value.split(",").map((item) => item.trim()).filter((item) => item);
+    setFacultyDetails({ ...facultyDetails, [field]: flatArray });
   };
 
   const handleNestedInputChange = (e, field, index) => {
@@ -237,29 +419,35 @@ function UpdateFacultyEntry() {
   const handleFacultyTypeChange = (e) => {
     setFacultyType(e.target.value);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage("");
+  
     if (!facultyType) {
-      alert("Please select a faculty type.");
+      setErrorMessage("Please select a faculty type.");
       return;
     }
+  
+    if (isUpdate && !_id) {
+      setErrorMessage("Cannot update faculty: No valid ID provided.");
+      console.error("No _id available for update!");
+      return;
+    }
+  
     const updatedFacultyDetails = { ...facultyDetails, facultyType, _id };
-    console.log(updatedFacultyDetails);
-
+    console.log("Submitting faculty data:", updatedFacultyDetails);
+  
     try {
       const formData = new FormData();
-      
-      // Handle scalar fields and file
+      formData.append("_id", _id); // Explicitly append _id as a string
       Object.entries(updatedFacultyDetails).forEach(([key, value]) => {
         if (key === "photograph" && value instanceof File) {
           formData.append(key, value);
-        } else if (!Array.isArray(value)) {
-          formData.append(key, value || ""); // Ensure no undefined values
+        } else if (key !== "_id" && !Array.isArray(value)) {
+          formData.append(key, value || "");
         }
       });
-
-      // Handle array fields separately without stringifying
+  
       const arrayFields = [
         "modulesHandled",
         "majorDomains",
@@ -272,29 +460,33 @@ function UpdateFacultyEntry() {
         "specialSessions",
         "otherResponsibilities",
       ];
-      arrayFields.forEach(field => {
+      arrayFields.forEach((field) => {
         if (updatedFacultyDetails[field].length > 0) {
-          updatedFacultyDetails[field].forEach((item, index) => {
-            Object.entries(item).forEach(([subKey, subValue]) => {
-              formData.append(`${field}[${index}][${subKey}]`, subValue || "");
-            });
-          });
-        } else {
-          formData.append(field, JSON.stringify([])); // Send empty array as stringified
+          formData.append(field, JSON.stringify(updatedFacultyDetails[field]));
         }
       });
-
+  
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+  
       const response = await axios.post("http://localhost:3001/api/faculty/save", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+  
+      console.log("Server response:", response.data);
       if (response.data.success) {
-        alert("Faculty data saved successfully!");
+        alert("Faculty data updated successfully!");
+        navigate(`/facultyupdation?username=${encodeURIComponent(username)}`);
       } else {
-        alert("Failed to save faculty data.");
+        setErrorMessage(`Failed to update faculty: ${response.data.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error saving faculty data:", error);
-      alert("An error occurred while saving the data.");
+      console.error("Error updating faculty data:", error.response?.data || error.message);
+      setErrorMessage(
+        `Error updating faculty: ${error.response?.data?.message || error.message}`
+      );
     }
   };
 
@@ -370,17 +562,31 @@ function UpdateFacultyEntry() {
                   <i className="uil uil-tachometer-fast-alt" />
                   <span className="text">Faculty Management</span>
                 </div>
+                {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
                 <form onSubmit={handleSubmit}>
                   <div>
                     <label htmlFor="facultyType">Faculty Type:</label>
-                    <select id="facultyType" value={facultyType} onChange={handleFacultyTypeChange}>
-                      <option value="" disabled>Select Faculty Type</option>
-                      <option value="internal">Internal Faculty</option>
-                      <option value="external">External Faculty</option>
-                    </select>
+                    {/* Display facultyType as text if updating, otherwise allow selection */}
+                    {isUpdate ? (
+                      <h2>{facultyType} Faculty</h2>
+                    ) : (
+                      <select
+                        id="facultyType"
+                        value={facultyType}
+                        onChange={handleFacultyTypeChange}
+                        required
+                      >
+                        <option value="">Select Faculty Type</option>
+                        <option value="internal">Internal</option>
+                        <option value="external">External</option>
+                        <option value="contract">Contract</option>
+                      </select>
+                    )}
                   </div>
 
-                  {(facultyType === "internal" || facultyType === "external") && (
+                  {(facultyType === "internal" ||
+                    facultyType === "external" ||
+                    facultyType === "contract") && (
                     <div>
                       <label>Name:</label>
                       <input
@@ -491,20 +697,69 @@ function UpdateFacultyEntry() {
                         value={facultyDetails.modulesHandled.join(", ")}
                         onChange={(e) => handleArrayInputChange(e, "modulesHandled")}
                       />
-                      <label>Major Domains (comma-separated):</label>
-                      <input
-                        type="text"
-                        name="majorDomains"
-                        value={facultyDetails.majorDomains.join(", ")}
-                        onChange={(e) => handleArrayInputChange(e, "majorDomains")}
-                      />
-                      <label>Minor Domains (comma-separated):</label>
-                      <input
-                        type="text"
-                        name="minorDomains"
-                        value={facultyDetails.minorDomains.join(", ")}
-                        onChange={(e) => handleArrayInputChange(e, "minorDomains")}
-                      />
+
+                      {/* Domain Expertise */}
+                      <h3>Domain Expertise</h3>
+                      {domainExpertise.map((expertise, index) => (
+                        <div
+                          key={index}
+                          className="domain-expertise-entry"
+                          style={{ marginBottom: "20px" }}
+                        >
+                          <div className="domain-section">
+                            <h4>Major Domain {index + 1}</h4>
+                            <select
+                              value={expertise.major}
+                              onChange={(e) => handleMajorDomainChange(index, e.target.value)}
+                            >
+                              <option value="">Select Major Domain</option>
+                              {Object.keys(domainOptions).map((domain) => (
+                                <option key={domain} value={domain}>
+                                  {domain}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          {expertise.major && (
+                            <div className="domain-section">
+                              <h4>Minor Domains</h4>
+                              {domainOptions[expertise.major].map((subDomain) => (
+                                <div key={subDomain}>
+                                  <input
+                                    type="checkbox"
+                                    id={`minor-${index}-${subDomain}`}
+                                    value={subDomain}
+                                    checked={expertise.minors.includes(subDomain)}
+                                    onChange={(e) =>
+                                      handleMinorDomainChange(index, subDomain, e.target.checked)
+                                    }
+                                  />
+                                  <label htmlFor={`minor-${index}-${subDomain}`}>
+                                    {subDomain}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {domainExpertise.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDomainExpertise(index)}
+                              style={{ marginTop: "10px", color: "white" }}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={handleAddDomainExpertise}
+                        style={{ marginTop: "10px" }}
+                      >
+                        <i className="bx bx-plus" /> Add Domain Expertise
+                      </button>
+
                       <label>Areas of Expertise:</label>
                       <input
                         type="text"
@@ -552,7 +807,9 @@ function UpdateFacultyEntry() {
 
                       {/* Publications */}
                       <h3>Publications</h3>
-                      <button type="button" onClick={handleAddPublication}>Add Publication</button>
+                      <button type="button" onClick={handleAddPublication}>
+                        Add Publication
+                      </button>
                       {facultyDetails.publications.map((pub, index) => (
                         <div key={index}>
                           <h4>Publication {index + 1}</h4>
@@ -587,13 +844,20 @@ function UpdateFacultyEntry() {
                             value={pub.additionalDetails}
                             onChange={(e) => handleNestedInputChange(e, "publications", index)}
                           />
-                          <button type="button" onClick={() => handleRemovePublication(index)}>Remove</button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePublication(index)}
+                          >
+                            Remove
+                          </button>
                         </div>
                       ))}
 
                       {/* Education Details */}
                       <h3>Education Details</h3>
-                      <button type="button" onClick={handleAddEducationDetail}>Add Education</button>
+                      <button type="button" onClick={handleAddEducationDetail}>
+                        Add Education
+                      </button>
                       {facultyDetails.educationDetails.map((edu, index) => (
                         <div key={index}>
                           <h4>Education {index + 1}</h4>
@@ -618,13 +882,20 @@ function UpdateFacultyEntry() {
                             value={edu.institutionName}
                             onChange={(e) => handleNestedInputChange(e, "educationDetails", index)}
                           />
-                          <button type="button" onClick={() => handleRemoveEducationDetail(index)}>Remove</button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEducationDetail(index)}
+                          >
+                            Remove
+                          </button>
                         </div>
                       ))}
 
                       {/* Courses Handled */}
                       <h3>Courses Handled</h3>
-                      <button type="button" onClick={handleAddCourse}>Add Course</button>
+                      <button type="button" onClick={handleAddCourse}>
+                        Add Course
+                      </button>
                       {facultyDetails.coursesHandled.map((course, index) => (
                         <div key={index}>
                           <h4>Course {index + 1}</h4>
@@ -683,13 +954,17 @@ function UpdateFacultyEntry() {
                             value={course.otherCourseType}
                             onChange={(e) => handleNestedInputChange(e, "coursesHandled", index)}
                           />
-                          <button type="button" onClick={() => handleRemoveCourse(index)}>Remove</button>
+                          <button type="button" onClick={() => handleRemoveCourse(index)}>
+                            Remove
+                          </button>
                         </div>
                       ))}
 
                       {/* Tours Attended */}
                       <h3>Tours Attended</h3>
-                      <button type="button" onClick={handleAddTour}>Add Tour</button>
+                      <button type="button" onClick={handleAddTour}>
+                        Add Tour
+                      </button>
                       {facultyDetails.toursAttended.map((tour, index) => (
                         <div key={index}>
                           <h4>Tour {index + 1}</h4>
@@ -756,13 +1031,17 @@ function UpdateFacultyEntry() {
                             value={tour.region}
                             onChange={(e) => handleNestedInputChange(e, "toursAttended", index)}
                           />
-                          <button type="button" onClick={() => handleRemoveTour(index)}>Remove</button>
+                          <button type="button" onClick={() => handleRemoveTour(index)}>
+                            Remove
+                          </button>
                         </div>
                       ))}
 
                       {/* Examiner */}
                       <h3>Examiner</h3>
-                      <button type="button" onClick={handleAddExaminer}>Add Examiner</button>
+                      <button type="button" onClick={handleAddExaminer}>
+                        Add Examiner
+                      </button>
                       {facultyDetails.examiner.map((exam, index) => (
                         <div key={index}>
                           <h4>Examiner {index + 1}</h4>
@@ -800,13 +1079,17 @@ function UpdateFacultyEntry() {
                             value={exam.paperCorrected}
                             onChange={(e) => handleNestedInputChange(e, "examiner", index)}
                           />
-                          <button type="button" onClick={() => handleRemoveExaminer(index)}>Remove</button>
+                          <button type="button" onClick={() => handleRemoveExaminer(index)}>
+                            Remove
+                          </button>
                         </div>
                       ))}
 
                       {/* Special Sessions */}
                       <h3>Special Sessions</h3>
-                      <button type="button" onClick={handleAddSpecialSession}>Add Special Session</button>
+                      <button type="button" onClick={handleAddSpecialSession}>
+                        Add Special Session
+                      </button>
                       {facultyDetails.specialSessions.map((session, index) => (
                         <div key={index}>
                           <h4>Special Session {index + 1}</h4>
@@ -844,13 +1127,20 @@ function UpdateFacultyEntry() {
                             value={session.feedbackRating1}
                             onChange={(e) => handleNestedInputChange(e, "specialSessions", index)}
                           />
-                          <button type="button" onClick={() => handleRemoveSpecialSession(index)}>Remove</button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSpecialSession(index)}
+                          >
+                            Remove
+                          </button>
                         </div>
                       ))}
 
                       {/* Other Responsibilities */}
                       <h3>Other Responsibilities</h3>
-                      <button type="button" onClick={handleAddResponsibility}>Add Responsibility</button>
+                      <button type="button" onClick={handleAddResponsibility}>
+                        Add Responsibility
+                      </button>
                       {facultyDetails.otherResponsibilities.map((resp, index) => (
                         <div key={index}>
                           <h4>Responsibility {index + 1}</h4>
@@ -859,15 +1149,26 @@ function UpdateFacultyEntry() {
                             name="responsibility"
                             placeholder="Responsibility"
                             value={resp.responsibility}
-                            onChange={(e) => handleNestedInputChange(e, "otherResponsibilities", index)}
+                            onChange={(e) =>
+                              handleNestedInputChange(e, "otherResponsibilities", index)
+                            }
                           />
-                          <button type="button" onClick={() => handleRemoveResponsibility(index)}>Remove</button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveResponsibility(index)}
+                          >
+                            Remove
+                          </button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {isUpdate && <button type="submit">Update Faculty</button>}
+                  {isUpdate && (
+                    <button type="submit" disabled={!_id}>
+                      Update Faculty
+                    </button>
+                  )}
                 </form>
               </div>
             </div>

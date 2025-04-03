@@ -7,6 +7,7 @@ const disposedAssetSchema = new mongoose.Schema({
   subCategory: { type: String, required: false },
   itemDescription: { type: String, required: true },
   itemIds: [{ type: String, required: false }],
+  quantity: { type: Number, required: true },  // Added quantity field
   purchaseValue: { type: Number, required: true },
   bookValue: { type: Number, required: true },
   inspectionDate: { type: Date, required: true },

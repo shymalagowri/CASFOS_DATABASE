@@ -56,9 +56,15 @@ const permanentSchema = new mongoose.Schema({
       itemDescription: { type: String, required: true },
       quantityReceived: { type: Number, required: true },
       unitPrice: { type: Number, required: true },
-      overallPrice: { type: Number, required: true },
-      amcDate: { type: Date },
-      itemPhotoUrl: { type: String },
+      totalPrice: { type: Number },
+      amcFromDate: { type: Date, required: false },  // Add this
+      amcToDate: { type: Date, required: false },    // Add this
+      amcCost: { type: Number, required: false },    // Add this
+      amcPhotoUrl: { type: String, required: false }, 
+        itemPhotoUrl: { type: String },
+      warrantyNumber: { type: String },
+    warrantyValidUpto: { type: Date },
+    warrantyPhotoUrl: { type: String },
       itemIds: [{ type: String }],
     },
   ],

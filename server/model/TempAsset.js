@@ -68,9 +68,16 @@ const tempAssetSchema = new mongoose.Schema({
     itemDescription: { type: String, required: false },
     quantityReceived: { type: Number, required: false },
     unitPrice: { type: Number, required: false },
-    overallPrice: { type: Number, required: false },
-    amcDate: { type: Date, required: false },
-    itemPhotoUrl: { type: String, required: false },
+    totalPrice: { type: Number }, // Changed from overallPrice
+    amcFromDate: { type: Date, required: false },  // Add this
+    amcToDate: { type: Date, required: false },    // Add this
+    amcCost: { type: Number, required: false },    // Add this
+    amcPhotoUrl: { type: String, required: false }, // Add this
+     itemPhotoUrl: { type: String, required: false },
+
+    warrantyNumber: { type: String }, // New field
+      warrantyValidUpto: { type: Date }, // New field
+      warrantyPhotoUrl: { type: String },
     itemIds: [{ type: String }],
   }],
 
@@ -81,7 +88,7 @@ const tempAssetSchema = new mongoose.Schema({
 
   // Fields from buildingSchema
   type: { type: String, required: false },
-  buildingNo: { type: String, unique: true, required: false },
+  buildingNo: { type: String,  required: false },
   plinthArea: { type: String, required: false },
   dateOfConstruction: { type: Date, required: false },
   costOfConstruction: { type: Number, required: false },

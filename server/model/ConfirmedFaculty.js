@@ -106,7 +106,7 @@ const facultySchema = new mongoose.Schema({
     type: String, 
     required: true,
     trim: true,
-    enum: ['internal', 'external']
+    enum: ['internal', 'external', 'contract'] // Updated to include 'contract'
   },
   name: { 
     type: String,
@@ -164,11 +164,12 @@ const facultySchema = new mongoose.Schema({
     type: String,
     trim: true,
     enum: ['retired', 'serving'],
-    required: true
+    default: 'serving' // Default added
   },
   conduct: { 
     type: String,
-    trim: true
+    trim: true,
+    default: '' // Default added
   },
   modulesHandled: [{ 
     type: String,
@@ -177,12 +178,12 @@ const facultySchema = new mongoose.Schema({
   majorDomains: [{
     type: String,
     trim: true,
-    enum: Object.keys(domainOptions) // Use major domain keys
+    enum: Object.keys(domainOptions)
   }],
   minorDomains: [{
     type: String,
     trim: true,
-    enum: Object.values(domainOptions).flat() // Use all minor domain values
+    enum: Object.values(domainOptions).flat()
   }],
   areasOfExpertise: { 
     type: String,
@@ -199,17 +200,17 @@ const facultySchema = new mongoose.Schema({
   publications: [{
     typeOfPublication: {
       type: String,
-      required: true,
-      enum: ['Books Published', 'Articles Published', 'Manuals', 'Others']
+      enum: ['Books Published', 'Articles Published', 'Manuals', 'Others'],
+      default: 'Others' // Default added
     },
     title: {
       type: String,
-      required: true,
-      trim: true
+      trim: true,
+      default: '' // Default instead of required
     },
     dateOfPublication: {
       type: Date,
-      required: true
+      default: null // Default instead of required
     },
     additionalDetails: {
       type: String,
@@ -236,7 +237,6 @@ const facultySchema = new mongoose.Schema({
   coursesHandled: [{
     courseType: {
       type: String,
-      required: true,
       enum: [
         'InductionTraining',
         'InserviceTraining',
@@ -244,17 +244,19 @@ const facultySchema = new mongoose.Schema({
         'SpecialTraining',
         'SpecialLecture',
         'Tours',
-        'Others'
-      ]
+        'Others',
+        ''
+      ],
+      default: '' // Default added instead of required
     },
     batchno: {
       type: Number,
-      required: true
+      default: null // Default added instead of required
     },
     title: {
       type: String,
-      required: true,
-      trim: true
+      trim: true,
+      default: '' // Default added instead of required
     },
     feedbackRating: {
       type: Number,
@@ -263,7 +265,8 @@ const facultySchema = new mongoose.Schema({
     },
     feedbackRatings: {
       type: String,
-      enum: ['poor', 'good', 'verygood', 'excellent', '']
+      enum: ['poor', 'good', 'verygood', 'excellent', ''],
+      default: ''
     },
     otherCourseType: {
       type: String,
@@ -314,7 +317,8 @@ const facultySchema = new mongoose.Schema({
   otherResponsibilities: [{
     responsibility: {
       type: String,
-      trim: true
+      trim: true,
+      default: '' // Default added
     }
   }],
   joined: { 

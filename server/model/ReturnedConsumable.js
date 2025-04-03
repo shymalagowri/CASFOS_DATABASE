@@ -1,19 +1,19 @@
 const mongoose = require("mongoose");
 
-const ReturnedConsumableSchema = new mongoose.Schema({
-  assetType: { 
-    type: String, 
-    enum: ['Consumable'], 
-    default: 'Consumable', 
-    required: true 
-  },
+const returnedConsumableSchema = new mongoose.Schema({
+  assetType: { type: String, required: true, enum: ["Consumable"] },
   assetCategory: { type: String, required: true },
   itemName: { type: String, required: true },
-  subCategory: { type: String },
-  itemDescription: { type: String, required: true },
-  location: { type: String, required: true },
-  returnQuantity: { type: Number, required: true },
-  condition: { type: String, required: true, enum: ["Good", "Servicable"] }
+  subCategory: String,
+  itemDescription: String,
+  location: String,
+  status: { type: String, enum: ["exchange", "dispose","returned"], default: null },
+  pdfUrl: String,
+  signedPdfUrl: String,
+  remark: String,
+  returnQuantity: { type: Number, required: true }, // Fix typo and set type to Number
+  approved: { type: String, enum: ["yes", "no"], default: null },
+  rejectionRemarks: { type: String, default: null }
 });
 
-module.exports = mongoose.model("ReturnedConsumable", ReturnedConsumableSchema);
+module.exports = mongoose.model("ReturnedConsumable", returnedConsumableSchema);

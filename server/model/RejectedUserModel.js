@@ -1,11 +1,57 @@
 const mongoose = require('mongoose');
 
-const RejectedUserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true },
-  joined: { type: Date, required: true },
-  role: { type: String, required: true },
-  remark: { type: String, required: true }, // Ensure this field is present
+const rejectedUserSchema = new mongoose.Schema({
+  name: { 
+    type: String, 
+    required: [true, "Please Enter a Name"], 
+    trim: true, 
+    maxlength: 50 
+  },
+  password: { 
+    type: String, 
+    required: [true, "Please Enter a Password"], 
+    minlength: 6 
+  },
+  role: { 
+    type: String, 
+    required: [true, "Please Enter role"], 
+    enum: ['headofoffice', 'principal', 'assetmanagerentry', 'facultyentrysuper', 'viewer'] 
+  },
+  dob: { 
+    type: Date, 
+    required: false 
+  },
+  designation: { 
+    type: String, 
+    required: false, 
+    trim: true 
+  },
+  phone: { 
+    type: String, 
+    required: false, 
+    match: /^[0-9]{10}$/ 
+  },
+  organization: { 
+    type: String, 
+    required: false, 
+    trim: true 
+  },
+  ministry: { 
+    type: String, 
+    required: false, 
+    trim: true 
+  },
+  remark: { 
+    type: String, 
+    required: [true, "Remark is required for rejection"], 
+    trim: true 
+  },
+  rejectedAt: { 
+    type: Date, 
+    required: false, 
+    default: () => new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000) 
+  }
 });
 
-module.exports = mongoose.model('RejectedUser', RejectedUserSchema);
+const RejectedUser = mongoose.model('RejectedUser', rejectedUserSchema);
+module.exports = RejectedUser;

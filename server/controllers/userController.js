@@ -1,102 +1,133 @@
 const bcrypt = require('bcryptjs');
-const AdminModel = require('../model/AdminModel');
-const DataEntryModel = require('../model/DataEntryModel');
-const ViewerModel = require('../model/ViewerModel');
-const { TemporaryUser } = require('../model/UserModel'); 
+const mongoose = require('mongoose');
+const TemporaryUser = require('../model/UserModel');
 const RejectedUser = require('../model/RejectedUserModel');
+const HeadOfOfficeModel = require('../model/HeadOfOfficeModel');
+const PrincipalModel = require('../model/PrincipalModel');
+const AssetManagerModel = require('../model/AssetManagerModel');
+const AssetEntryStaffModel = require('../model/AssetEntryStaffModel');
+const FacultyEntryStaffModel = require('../model/FacultyEntryStaffModel');
+const SuperintendentModel = require('../model/SuperintendentModel');
+const ViewerModel = require('../model/ViewerModel');
+
+const loginUser = async (req, res) => {
+  const { name, password, role } = req.body;
+
+  if (!name || !password || !role) {
+    return res.status(400).json({ message: 'Name, password, and role are required' });
+  }
+
+  try {
+    let Model;
+    switch (role) {
+      case 'headofoffice':
+        Model = HeadOfOfficeModel;
+        break;
+      case 'principal':
+        Model = PrincipalModel;
+        break;
+      case 'assetmanager':
+        Model = AssetManagerModel;
+        break;
+      case 'assetentrystaff':
+        Model = AssetEntryStaffModel;
+        break;
+      case 'facultyentrystaff':
+        Model = FacultyEntryStaffModel;
+        break;
+      case 'superintendent':
+        Model = SuperintendentModel;
+        break;
+      case 'viewer':
+        Model = ViewerModel;
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    const user = await Model.findOne({ name });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Wrong password' });
+    }
+
+    res.json("success");
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 const registerUser = async (req, res) => {
   const { name, password, role, dob, designation, phone, organization, ministry } = req.body;
 
+  // Validate required fields
+  if (!name || !password || !role) {
+    return res.status(400).json({ message: 'Name, password, and role are required' });
+  }
+
   try {
-      // Check if user already exists
-      let existingUser;
-      if(role=='admin')
-      {
-        existingUser = await AdminModel.findOne({ $or: [{ name }, { phone }] });
-      }
-      else if(role=='dataentry')
-      {
-        existingUser = await DataEntryModel.findOne({ $or: [{ name }, { phone }] });
-      }
-      else
-      {
-        existingUser = await ViewerModel.findOne({ $or: [{ name }, { phone }] });
-      }
-      if (existingUser) {
-          return res.status(400).json({ message: "Name or phone number already in use." });
-      }
+    const existingUser = await TemporaryUser.findOne({ name });
+    if (existingUser) {
+      console.log("hiii")
+      return res.status(400).json({ message: "Username already in use" });
+    }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Create new user
-      const newUser = new TemporaryUser({
-          name,
-          password: hashedPassword,
-          role,
-          dob,
-          designation,
-          phone,
-          organization,
-          ministry,
-      });
+    const newUser = new TemporaryUser({
+      name,
+      password: hashedPassword,
+      role,
+      dob: dob || undefined,           // Optional
+      designation: designation || undefined,
+      phone: phone || undefined,
+      organization: organization || undefined,
+      ministry: ministry || undefined,
+    });
 
-      // Save user to the database
-      await newUser.save();
-      res.status(201).json({ message: "User registered successfully!" });
+    await newUser.save();
+    res.status(201).json({ message: "User registered successfully!" });
   } catch (err) {
-      // Handle validation errors
-      if (err.name === "ValidationError") {
-          const messages = Object.values(err.errors).map((error) => error.message);
-          return res.status(400).json({ message: messages.join(", ") });
-      }
-      // Handle other errors
-      res.status(500).json({ message: err.message });
+    if (err.name === "ValidationError") {
+      console.log(err);
+      const messages = Object.values(err.errors).map((error) => error.message);
+      return res.status(400).json({ message: messages.join(", ") });
+    }
+    res.status(500).json({ message: err.message });
   }
 };
-const getUserAccess = async (req, res) => {
-    const { username, role } = req.params;
-    console.log(username, role);
-  
-    try {
-      let user;
-      if (role === "dataentry") {
-        user = await DataEntryModel.findOne({ name: username });
-      } else {
-        user = await ViewerModel.findOne({ name: username });
-      }
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      res.json({ access: user.access });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error fetching user data', error });
-    }
-  };
-  
-// 🔹 Approve a user and move them to the respective role collection
+
 const approveUser = async (req, res) => {
-    const { id } = req.params;
-    const { access } = req.body;  // Get access types from the frontend request
-    console.log(access);
-    try {
-      const user = await TemporaryUser.findById(id);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      let Model;
+  const { id } = req.params;
+  const { access, specificRole } = req.body;
+
+  try {
+    const user = await TemporaryUser.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    let Model;
+    let finalRole = user.role;
+
+    if (user.role === 'assetmanagerentry') {
+      finalRole = specificRole === 'assetmanager' ? 'assetmanager' : 'assetentrystaff';
+      Model = finalRole === 'assetmanager' ? AssetManagerModel : AssetEntryStaffModel;
+    } else if (user.role === 'facultyentrysuper') {
+      finalRole = specificRole === 'facultyentrystaff' ? 'facultyentrystaff' : 'superintendent';
+      Model = finalRole === 'facultyentrystaff' ? FacultyEntryStaffModel : SuperintendentModel;
+    } else {
       switch (user.role) {
-        case 'admin':
-          Model = AdminModel;
+        case 'headofoffice':
+          Model = HeadOfOfficeModel;
           break;
-        case 'dataentry':
-          Model = DataEntryModel;
+        case 'principal':
+          Model = PrincipalModel;
           break;
         case 'viewer':
           Model = ViewerModel;
@@ -104,182 +135,113 @@ const approveUser = async (req, res) => {
         default:
           return res.status(400).json({ message: 'Invalid role' });
       }
-  
-      const approvedUser = new Model({
-        name: user.name,
-        password: user.password,
-        role: user.role,
-        dob: user.dob,
-        designation: user.designation,
-        phone: user.phone,
-        organization: user.organization,
-        ministry: user.ministry,
-        access: access  // Save selected access types here
-      });
-      console.log(approvedUser);
-      try {
-        await approvedUser.save();
-        console.log("User saved successfully");
-      } catch (error) {
-        console.error("Error saving user:", error);
-      }
-  
-      await TemporaryUser.findByIdAndDelete(id);
-  
-      res.status(200).json({ message: 'User approved and moved to role-specific collection' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error approving user', error });
     }
-  };
-  const updateAccess = async (req, res) => {
-    try {
-        const { userId, role, newAccess } = req.body;
-        console.log(userId, role, newAccess);
 
-        // Define the full list of access options
-        const fullAccessOptions = ["IT", "Electrical", "Store", "Furniture"];
+    const approvedUser = new Model({
+      name: user.name,
+      password: user.password,
+      role: finalRole,
+      dob: user.dob || undefined,           // Optional
+      designation: user.designation || undefined,
+      phone: user.phone || undefined,
+      organization: user.organization || undefined,
+      ministry: user.ministry || undefined,
+      access: finalRole === 'headofoffice' || finalRole === 'principal' ? ['all'] : (access || []),
+    });
 
-        // If "All" is included in newAccess, replace it with the full list
-        const updatedAccess = newAccess.includes("All") ? fullAccessOptions : newAccess;
+    await approvedUser.save();
+    await TemporaryUser.findByIdAndDelete(id);
 
-        // Determine the correct model based on the role
-        let userModel = role === "dataentry" ? DataEntryModel : ViewerModel;
-
-        // Find the user by ID
-        const user = await userModel.findById(userId);
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        // Update the user's access level
-        user.access = updatedAccess;
-        await user.save();
-
-        res.status(200).json({ message: "Access updated successfully", user });
-    } catch (error) {
-        console.error("Error updating access:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-const loginUser = async (req, res) => {
-    const { name, password, role } = req.body;
-    console.log(name,password,role);
-    try {
-        let Model;
-        switch (role) {
-            case 'admin':
-                Model = AdminModel;
-                break;
-            case 'dataentry':
-                Model = DataEntryModel;
-                break;
-            case 'viewer':
-                Model = ViewerModel;
-                break;
-            default:
-                return res.status(400).json({ message: 'Invalid role' });
-        }
-
-        const user = await Model.findOne({ name });
-        console.log(user);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Securely compare password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            console.log("wrong");
-            return res.status(401).json({ message: 'Wrong password' });
-        }
-
-        res.json("success"); // Ensure this matches frontend's expected response
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-const getTemporaryUsers = async (req, res) => {
-    try {
-        const users = await TemporaryUser.find();
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching users', error });
-    }
-};
-const getConfirmedUsers = async (req, res) => {
-  try {
-    const admins = await AdminModel.find();
-    const dataEntries = await DataEntryModel.find();
-    const viewers = await ViewerModel.find();
-
-    // Combine all users into a single array
-    const users = [...admins, ...dataEntries, ...viewers];      
-    res.status(200).json(users);
+    res.status(200).json({ message: 'User approved and moved to role-specific collection' });
   } catch (error) {
-      res.status(500).json({ message: 'Error fetching users', error });
+    res.status(500).json({ message: 'Error approving user', error: error.message });
   }
 };
 
-
 const rejectUser = async (req, res) => {
-    const { id } = req.params;
-    const { remark } = req.body;
+  const { id } = req.params;
+  const { remark } = req.body;
 
-    if (!remark) {
-        return res.status(400).json({ message: 'Remark is required for rejection' });
+  if (!remark) {
+    return res.status(400).json({ message: 'Remark is required for rejection' });
+  }
+
+  try {
+    const user = await TemporaryUser.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    try {
-        const user = await TemporaryUser.findById(id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+    const rejectedUser = new RejectedUser({
+      name: user.name,
+      password: user.password,
+      role: user.role,
+      dob: user.dob || undefined,
+      designation: user.designation || undefined,
+      phone: user.phone || undefined,
+      organization: user.organization || undefined,
+      ministry: user.ministry || undefined,
+      remark,
+    });
 
-        const rejectedUser = new RejectedUser({
-            ...user.toObject(),
-            remark
-        });
+    await rejectedUser.save();
+    await TemporaryUser.findByIdAndDelete(id);
 
-        await rejectedUser.save();
-        await TemporaryUser.findByIdAndDelete(id);
-
-        res.status(200).json({ message: 'User rejected successfully with remark' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error rejecting user', error });
-    }
+    res.status(200).json({ message: 'User rejected successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting user', error: error.message });
+  }
 };
 
-const getUserCounts = async (req, res) => {
-    try {
-        const adminCount = await AdminModel.countDocuments();
-        const dataEntryCount = await DataEntryModel.countDocuments();
-        const viewerCount = await ViewerModel.countDocuments();
+const checkUser = async (req, res) => {
+  console.log("enterd");
+  const { name, role } = req.body;
 
-        res.json({
-            data: { adminCount, dataEntryCount, viewerCount }
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Error fetching user counts' });
+  if (!name || !role) {
+    return res.status(400).json({ message: 'Name and role are required' });
+  }
+
+  try {
+    let Model;
+    switch (role) {
+      case 'assetmanager':
+        Model = AssetManagerModel;
+        break;
+      case 'facultyentrystaff':
+        Model = FacultyEntryStaffModel;
+        break;
+      case 'headofoffice':
+        Model = HeadOfOfficeModel; // Added for Approval.js check
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid role for checking' });
     }
+
+    const user = await Model.findOne({ name });
+    console.log("found",user)
+    res.json({ exists: !!user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-const temporaryUsersCount = async (req, res) => {
-    try {
-        const count = await TemporaryUser.countDocuments();
-        res.json({ count });
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching new users count' });
-    }
+// Assuming these are existing functions you might have
+const getTemporaryUsers = async (req, res) => {
+  try {
+    const users = await TemporaryUser.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching temporary users', error: error.message });
+  }
 };
 
+// Export all functions
 module.exports = {
-    registerUser,
-    loginUser,
-    getTemporaryUsers,
-    approveUser,
-    rejectUser,
-    getUserCounts,
-    temporaryUsersCount,
-    getUserAccess,
-    getConfirmedUsers,
-    updateAccess
+  registerUser,
+  loginUser,
+  approveUser,
+  rejectUser,
+  checkUser,
+  getTemporaryUsers,
+  // Add other existing exports here if any
 };

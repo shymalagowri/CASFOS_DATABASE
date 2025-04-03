@@ -6,6 +6,8 @@ const tempdisposeAssetSchema = new mongoose.Schema({
   itemName: { type: String, required: true },
   subCategory: { type: String, required: false },
   itemDescription: { type: String, required: true },
+  quantity: { type: Number, required: true },  // Added quantity field
+
   itemIds: [{ type: String, required: false }],
   purchaseValue: { type: Number, required: true },
   bookValue: { type: Number, required: true },

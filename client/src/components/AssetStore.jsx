@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { jsPDF } from "jspdf";
 import { Helmet } from "react-helmet";
 import "../styles/style.css";
 import { FaPlus } from "react-icons/fa";
@@ -10,7 +11,12 @@ const AssetStore = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
-
+  const [customSource, setCustomSource] = useState("");
+  const [customModeOfPurchase, setCustomModeOfPurchase] = useState("");
+  const [remarks, setRemarks] = useState({}); // For storing remarks for each returned asset
+  const [signedReceipts, setSignedReceipts] = useState({}); // For storing signed receipt URLs
+  const [amcPhotoUrls, setAmcPhotoUrls] = useState({});
+  const [availableQuantity, setAvailableQuantity] = useState(0);
   const [activeTab, setActiveTab] = useState("store");
   const [billPhotoUrl, setBillPhotoUrl] = useState("");
   const [itemPhotoUrls, setItemPhotoUrls] = useState({});
@@ -27,6 +33,7 @@ const AssetStore = () => {
   const [receivedBy, setReceivedBy] = useState("");
   const [servicableItems, setServicableItems] = useState([]);
   const [items, setItems] = useState([]);
+  const [warrantyPhotoUrls, setWarrantyPhotoUrls] = useState({});
   const [buildingData, setBuildingData] = useState({
     subCategory: "", customSubCategory: "", location: "", type: "", customType: "", buildingNo: "", plinthArea: "", status: "", dateOfConstruction: "", costOfConstruction: 0, remarks: ""
   });
@@ -79,7 +86,7 @@ const AssetStore = () => {
       "Computer System", "Laptop", "Printers", "Scanners", "Xerox Machine", "Server", "Others"
     ],
   };
-
+  const serverBaseUrl = "http://localhost:3001"; // Define server base URL
   // Fetch servicable items
   useEffect(() => {
     if (
@@ -132,7 +139,6 @@ const AssetStore = () => {
     }
   }, [assetType, assetCategory, activeTab]);
 
-  // Fetch returned assets
   useEffect(() => {
     if (activeTab === "returned" && assetType && assetCategory) {
       const fetchReturnedAssets = async () => {
@@ -140,9 +146,9 @@ const AssetStore = () => {
           const response = await axios.post("http://localhost:3001/api/assets/getReturnedAssets", {
             assetType,
             assetCategory,
-            status: "returned"
+            status: "returned",
           });
-          const formattedAssets = response.data.map(asset => ({
+          const formattedAssets = response.data.map((asset) => ({
             _id: asset._id,
             assetType: asset.assetType,
             assetCategory: asset.assetCategory,
@@ -150,8 +156,12 @@ const AssetStore = () => {
             subCategory: asset.subCategory,
             itemDescription: asset.itemDescription,
             returnedFromLocation: asset.location,
-            itemId: asset.itemId,
-            condition: "Servicable"
+            itemId: assetType === "Permanent" ? asset.itemId : null, // Only for Permanent
+            returnedQuantity: assetType === "Consumable" ? asset.returnQuantity : null, // Only for Consumable
+            condition: assetType === "Permanent" ? "To Be Serviced" : "To Be Exchanged", // Default condition based on type
+            pdfUrl: null,
+            signedPdfUrl: null,
+            isUploaded: false,
           }));
           setReturnedAssets(formattedAssets);
         } catch (error) {
@@ -162,40 +172,30 @@ const AssetStore = () => {
       fetchReturnedAssets();
     }
   }, [assetType, assetCategory, activeTab]);
-
   // Fetch disposable items
   useEffect(() => {
-    if (
-      activeTab === "disposable" &&
-      assetType &&
-      assetCategory &&
-      disposableData.itemName
-    ) {
-      const fetchDisposableItems = async () => {
+    if (activeTab === "disposable" && assetType && assetCategory && disposableData.itemName) {
+      const fetchAvailableQuantity = async () => {
         try {
-          const response = await axios.post("http://localhost:3001/api/assets/getDisposableItems", {
+          const response = await axios.post("http://localhost:3001/api/assets/getAvailableDisposableQuantity", {
             assetType,
             assetCategory,
             itemName: disposableData.itemName,
             subCategory: disposableData.subCategory,
             itemDescription: disposableData.itemDescription,
           });
-          setDisposableItems(response.data.itemIds || []);
+          setAvailableQuantity(response.data.availableQuantity);
+          if (assetType === "Permanent") {
+            setDisposableItems(response.data.itemIds || []);
+          }
         } catch (error) {
-          console.error("Failed to fetch disposable items:", error);
-          setDisposableItems([]);
+          console.error("Failed to fetch available quantity:", error);
+          setAvailableQuantity(0);
         }
       };
-      fetchDisposableItems();
+      fetchAvailableQuantity();
     }
-  }, [
-    assetType,
-    assetCategory,
-    disposableData.itemName,
-    disposableData.subCategory,
-    disposableData.itemDescription,
-    activeTab,
-  ]);
+  }, [assetType, assetCategory, disposableData.itemName, disposableData.subCategory, disposableData.itemDescription, activeTab]);
 
   // Fetch purchase values for selected itemIds
   const fetchPurchaseValues = async (selectedItemIds) => {
@@ -249,7 +249,24 @@ const AssetStore = () => {
   // Store/Receipt Entry Functions
   const addItem = () => {
     setItems([...items, {
-      itemName: "", subCategory: "", customSubCategory: "", itemDescription: "", quantityReceived: 0, unitPrice: 0, overallPrice: 0, itemPhoto: null, itemIds: [], showIdInputs: false, customItemName: "", amcDate: ""
+      itemName: "",
+      subCategory: "",
+      customSubCategory: "",
+      itemDescription: "",
+      quantityReceived: 0,
+      unitPrice: 0,
+      totalPrice: 0,
+      itemPhoto: null,
+      itemIds: [],
+      showIdInputs: false,
+      customItemName: "",
+      amcFromDate: "",  // Add this
+      amcToDate: "",    // Add this
+      amcCost: 0,       // Add this
+      amcPhoto: null,   // Add this
+      warrantyNumber: "",
+      warrantyValidUpto: "",
+      warrantyPhoto: null,
     }]);
   };
 
@@ -260,23 +277,26 @@ const AssetStore = () => {
   const handleItemIdChange = (itemIndex, idIndex, value) => {
     setItems((prevItems) => prevItems.map((item, i) => i === itemIndex ? { ...item, itemIds: item.itemIds.map((id, j) => (j === idIndex ? value : id)) } : item));
   };
-
   const handleItemChange = (index, field, value) => {
     const updatedItems = items.map((item, i) => {
       if (i === index) {
         let updatedItem = { ...item };
-        if (field === "subCategory") {
+        if (field === "subCategory" && assetType === "Permanent") {
           updatedItem = { ...updatedItem, [field]: value, itemName: "", customSubCategory: value === "Others" ? item.customSubCategory : "" };
         } else if (field === "itemName") {
-          updatedItem = { ...updatedItem, [field]: value, customItemName: value === "Others" ? item.customItemName : "" };
-        } else if (field === "quantityReceived" || field === "unitPrice") {
-          const parsedValue = field === "quantityReceived" ? parseInt(value, 10) || 0 : parseFloat(value) || 0;
-          updatedItem = { ...updatedItem, [field]: parsedValue };
-          const quantity = field === "quantityReceived" ? parsedValue : (parseInt(item.quantityReceived, 10) || 0);
-          const unitPrice = field === "unitPrice" ? parsedValue : (parseFloat(item.unitPrice) || 0);
-          updatedItem.overallPrice = quantity * unitPrice;
+          updatedItem = {
+            ...updatedItem,
+            [field]: value,
+            ...(assetType === "Permanent" ? { customItemName: value === "Others" ? item.customItemName : "" } : {}),
+          };
         } else {
           updatedItem = { ...updatedItem, [field]: value };
+        }
+        // Handle new AMC fields
+        if (field === "amcFromDate" || field === "amcToDate") {
+          updatedItem[field] = value; // Date fields
+        } else if (field === "amcCost") {
+          updatedItem[field] = parseFloat(value) || 0; // Numeric field
         }
         return updatedItem;
       }
@@ -284,7 +304,6 @@ const AssetStore = () => {
     });
     setItems(updatedItems);
   };
-
   const handleBuildingChange = (field, value) => {
     setBuildingData(prev => ({
       ...prev,
@@ -339,18 +358,24 @@ const AssetStore = () => {
         purchaseDate,
         supplierName,
         supplierAddress,
-        source,
-        modeOfPurchase,
+        source: source === "Other" && customSource ? customSource : source,
+        modeOfPurchase: modeOfPurchase === "Others" && customModeOfPurchase ? customModeOfPurchase : modeOfPurchase,
         billNo,
         receivedBy,
-        items: JSON.stringify(items.map(item => ({
+        items: JSON.stringify(items.map((item, index) => ({
           itemName: item.itemName === "Others" && item.customItemName ? item.customItemName : item.itemName,
           subCategory: item.subCategory === "Others" && item.customSubCategory ? item.customSubCategory : item.subCategory,
           itemDescription: item.itemDescription,
           quantityReceived: item.quantityReceived,
           unitPrice: item.unitPrice,
-          overallPrice: item.overallPrice,
-          amcDate: item.amcDate,
+          totalPrice: item.totalPrice,
+          amcFromDate: item.amcFromDate,  // Add this
+          amcToDate: item.amcToDate,      // Add this
+          amcCost: item.amcCost,          // Add this
+          amcPhotoUrl: amcPhotoUrls[`amcPhoto${index}`] || "",  // Add this
+          warrantyNumber: item.warrantyNumber,
+          warrantyValidUpto: item.warrantyValidUpto,
+          warrantyPhotoUrl: warrantyPhotoUrls[`warrantyPhoto${index}`] || "",
           itemIds: item.itemIds,
         }))),
         billPhotoUrl
@@ -384,29 +409,41 @@ const AssetStore = () => {
     setSupplierName("");
     setSupplierAddress("");
     setSource("");
+    setCustomSource(""); 
     setModeOfPurchase("");
+    setCustomModeOfPurchase(""); 
     setBillNo("");
     setBillPhotoUrl("");
     setReceivedBy("");
+    setAmcPhotoUrls({}); // Add this
     setItems([]);
     setBuildingData({ subCategory: "", customSubCategory: "", location: "", type: "", customType: "", buildingNo: "", plinthArea: "", status: "", dateOfConstruction: "", costOfConstruction: 0, remarks: "" });
     setLandData({ subCategory: "", customSubCategory: "", location: "", status: "", dateOfPossession: "", controllerOrCustody: "", details: "" });
     setItemPhotoUrls({});
+    setWarrantyPhotoUrls({});
   };
-
-  const handleFileUpload = async (file, fieldName) => {
+  const handleFileUpload = async (file, fieldName, index) => {
     const formData = new FormData();
     formData.append("file", file);
     try {
       const response = await axios.post("http://localhost:3001/api/assets/uploadFile", formData, { headers: { "Content-Type": "multipart/form-data" } });
       if (fieldName === "billPhoto") setBillPhotoUrl(response.data.fileUrl);
-      else setItemPhotoUrls((prev) => ({ ...prev, [fieldName]: response.data.fileUrl }));
+      else if (fieldName === "itemPhoto") setItemPhotoUrls((prev) => ({ ...prev, [`itemPhoto${index}`]: response.data.fileUrl }));
+      else if (fieldName === "warrantyPhoto") setWarrantyPhotoUrls((prev) => ({ ...prev, [`warrantyPhoto${index}`]: response.data.fileUrl }));
+      else if (fieldName === "amcPhoto") setAmcPhotoUrls((prev) => ({ ...prev, [`amcPhoto${index}`]: response.data.fileUrl })); // Add this
     } catch (error) {
       console.error("File upload failed:", error);
       alert("File upload failed. Please try again.");
     }
   };
-
+  const handleWarrantyPhotoChange = (e, index) => {
+    const file = e.target.files[0];
+    if (file) handleFileUpload(file, "warrantyPhoto", index);
+  };
+  const handleAmcPhotoChange = (e, index) => {
+    const file = e.target.files[0];
+    if (file) handleFileUpload(file, "amcPhoto", index);
+  };
   const handleBillPhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) handleFileUpload(file, "billPhoto");
@@ -419,25 +456,127 @@ const AssetStore = () => {
 
   // Returned Assets Functions
   const handleConditionChange = (index, value) => {
-    setReturnedAssets((prev) => prev.map((item, i) => i === index ? { ...item, condition: value } : item));
+    setReturnedAssets(prev => prev.map((item, i) => i === index ? { ...item, condition: value } : item));
   };
-
-  const handleSaveReturnedAsset = async (index) => {
+  
+  const handleRemarkChange = (index, value) => {
+    setRemarks(prev => ({ ...prev, [index]: value }));
+  };
+  
+  const generateReceiptPDF = (asset, remark) => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Returned Asset Receipt", 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Asset Type: ${asset.assetType}`, 20, 40);
+    doc.text(`Asset Category: ${asset.assetCategory}`, 20, 50);
+    doc.text(`Item Name: ${asset.itemName}`, 20, 60);
+    doc.text(`Sub Category: ${asset.subCategory}`, 20, 70);
+    doc.text(`Item Description: ${asset.itemDescription}`, 20, 80);
+    doc.text(`Returned From: ${asset.returnedFromLocation}`, 20, 90);
+    if (asset.assetType === "Permanent") {
+      doc.text(`Item ID: ${asset.itemId}`, 20, 100);
+    } else {
+      doc.text(`Returned Quantity: ${asset.returnedQuantity}`, 20, 100);
+    }
+    doc.text(`Condition: ${asset.condition}`, 20, 110);
+    doc.text(`Remark: ${remark || "N/A"}`, 20, 120);
+    doc.text("Signature: ____________________", 150, 280, { align: "right" });
+    return doc.output("blob");
+  };
+  const handleDownloadReceipt = async (index) => {
     const asset = returnedAssets[index];
-    const { _id, condition } = asset;
-
+    const remark = remarks[index] || "";
+    const pdfBlob = generateReceiptPDF(asset, remark);
+  
     try {
-      const status = condition === "Servicable" ? "service" : "dispose";
-      const payload = { _id, status };
-      await axios.post("http://localhost:3001/api/assets/saveReturnedPermanentStatus", payload);
-      setReturnedAssets((prev) => prev.filter((_, i) => i !== index));
-      Swal.fire({ icon: "success", title: "Success!", text: "Asset condition saved!" });
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = () => reject(new Error("Failed to read PDF blob"));
+        reader.readAsDataURL(pdfBlob);
+      });
+  
+      const response = await axios.post(`${serverBaseUrl}/api/assets/storeReturnedReceipt`, {
+        assetId: asset._id,
+        pdfBase64: base64Data,
+        assetType: asset.assetType,
+      });
+      
+      // Force download immediately after storing
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(pdfBlob);
+      link.download = `receipt_${asset.itemId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+  
+      // Update state with the stored URL
+      setReturnedAssets(prev => prev.map((item, i) => i === index ? { ...item, pdfUrl: response.data.pdfUrl } : item));
+    } catch (error) {
+      Swal.fire({ icon: "error", title: "Oops...", text: "Failed to generate receipt!" });
+      console.error("Error in handleDownloadReceipt:", error);
+    }
+  };
+  const handleUploadSignedReceipt = async (index, file) => {
+    if (!file) return;
+  
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("assetId", returnedAssets[index]._id);
+    formData.append("assetType", returnedAssets[index].assetType);
+  
+    try {
+      const response = await axios.post(`${serverBaseUrl}/api/assets/uploadSignedReturnedReceipt`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const signedPdfUrl = response.data.signedPdfUrl;
+      setReturnedAssets(prev => prev.map((item, i) => 
+        i === index ? { ...item, signedPdfUrl, isUploaded: true } : item
+      ));
+      Swal.fire({ icon: "success", title: "Success!", text: "Signed receipt uploaded!" });
+    } catch (error) {
+      Swal.fire({ icon: "error", title: "Oops...", text: "Failed to upload signed receipt!" });
+      console.error(error);
+    }
+  };
+  
+  const handleDoneReturnedAsset = async (index) => {
+    const asset = returnedAssets[index];
+    if (!asset.signedPdfUrl) {
+      Swal.fire({ icon: "warning", title: "Warning", text: "Please upload signed receipt first!" });
+      return;
+    }
+  
+    if (!asset._id || !asset.assetType || (asset.assetType === "Consumable" && !asset.returnedQuantity)) {
+      Swal.fire({ icon: "error", title: "Error", text: "Missing required asset data!" });
+      return;
+    }
+  
+    try {
+      const status =
+        asset.assetType === "Permanent"
+          ? asset.condition === "To Be Serviced" ? "service" : "dispose"
+          : asset.condition === "To Be Exchanged" ? "exchange" : "dispose";
+  
+      await axios.post(`${serverBaseUrl}/api/assets/saveReturnedStatus`, {
+        _id: asset._id,
+        status,
+        remark: remarks[index] || "",
+        pdfUrl: asset.pdfUrl,
+        signedPdfUrl: asset.signedPdfUrl,
+        assetType: asset.assetType,
+        ...(asset.assetType === "Consumable" && { returnedQuantity: asset.returnedQuantity }),
+      });
+  
+      // Do not remove from returnedAssets immediately; wait for approval
+      Swal.fire({ icon: "success", title: "Submitted!", text: "Asset condition submitted for approval!" });
     } catch (error) {
       Swal.fire({ icon: "error", title: "Oops...", text: "Failed to save asset condition!" });
       console.error(error);
     }
   };
-
   // Serviced/Maintenance Functions
   const handleMaintenanceChange = (field, value) => {
     setMaintenanceData(prev => ({ ...prev, [field]: value }));
@@ -471,7 +610,11 @@ const AssetStore = () => {
 
   // Disposable Assets Functions
   const handleDisposableChange = (field, value) => {
-    setDisposableData(prev => ({ ...prev, [field]: value }));
+    setDisposableData(prev => ({ 
+      ...prev, 
+      [field]: value,
+      ...(field === "quantity" && value > availableQuantity ? { quantity: availableQuantity } : {})
+    }));
   };
 
   const handleServicedChange = (field, value) => {
@@ -510,12 +653,25 @@ const AssetStore = () => {
       console.error(error);
     }
   };
-
+  const removeItem = (index) => {
+    setItems((prevItems) => prevItems.filter((_, i) => i !== index));
+    setItemPhotoUrls((prev) => {
+      const updated = { ...prev };
+      delete updated[`itemPhoto${index}`];
+      return updated;
+    });
+    setWarrantyPhotoUrls((prev) => {
+      const updated = { ...prev };
+      delete updated[`warrantyPhoto${index}`];
+      return updated;
+    });
+  };
   const handleSubmitDisposable = async () => {
     if (
       !disposableData.itemName ||
       !disposableData.itemDescription ||
-      disposableData.itemIds.length === 0 ||
+      (assetType === "Permanent" && disposableData.itemIds.length === 0) ||
+      (assetType === "Consumable" && (!disposableData.quantity || disposableData.quantity <= 0)) ||
       disposableData.bookValue < 0 ||
       !disposableData.inspectionDate ||
       !disposableData.condemnationDate ||
@@ -525,11 +681,11 @@ const AssetStore = () => {
       Swal.fire({
         icon: "warning",
         title: "Warning",
-        text: "Please fill all fields and select at least one ID!",
+        text: "Please fill all fields and provide valid quantity/IDs!",
       });
       return;
     }
-
+  
     try {
       await axios.post("http://localhost:3001/api/assets/requestForDisposal", {
         assetType,
@@ -537,7 +693,8 @@ const AssetStore = () => {
         itemName: disposableData.itemName,
         subCategory: disposableData.subCategory,
         itemDescription: disposableData.itemDescription,
-        itemIds: disposableData.itemIds,
+        itemIds: assetType === "Permanent" ? disposableData.itemIds : undefined,
+        quantity: disposableData.quantity,
         purchaseValue: disposableData.purchaseValue,
         bookValue: disposableData.bookValue,
         inspectionDate: disposableData.inspectionDate,
@@ -551,6 +708,7 @@ const AssetStore = () => {
         subCategory: "",
         itemDescription: "",
         itemIds: [],
+        quantity: 0,  // Added
         purchaseValue: 0,
         bookValue: 0,
         inspectionDate: "",
@@ -560,6 +718,7 @@ const AssetStore = () => {
       });
       setDisposableItems([]);
       setPurchaseValues({});
+      setAvailableQuantity(0);
     } catch (error) {
       Swal.fire({ icon: "error", title: "Oops...", text: "Failed to save disposable asset!" });
       console.error(error);
@@ -577,16 +736,14 @@ const AssetStore = () => {
       </Helmet>
 
       <section id="sidebar">
-        <a href="#" className="brand"><span className="text">DATA ENTRY STAFF</span></a>
+        <a href="#" className="brand"><span className="text">ASSET ENTRY STAFF</span></a>
         <ul className="side-menu top">
-          <li><a href={`/dataentrydashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-          <li className="active"><a href={`/assetstore?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Store</span></a></li>
-          <li><a href={`/assetissue?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset Issue</span></a></li>
-          <li><a href={`/assetreturn?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Asset Return</span></a></li>
-          <li><a href={`/rejectedassets?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Rejected Assets</span></a></li>
-          <li><a href={`/facultyentry?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty Entry</span></a></li>
-          <li><a href={`/facultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty Updation</span></a></li>
-        </ul>
+            <li className="active"><a href={`/assetentrydashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
+            <li ><a href={`/assetstore?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Store</span></a></li>
+            <li><a href={`/assetissue?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset Issue</span></a></li>
+            <li><a href={`/assetreturn?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Asset Return</span></a></li>
+            <li><a href={`/viewasset?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Asset View</span></a></li>
+          </ul>
         <ul className="side-menu">
           <li><a href="/" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></a></li>
         </ul>
@@ -612,7 +769,7 @@ const AssetStore = () => {
 
         <main>
           <div style={styles.container}>
-            <h2>Asset Store System</h2>
+            <h2>Asset Management System</h2>
 
             {activeTab === "store" && (
               <div style={styles.formContainer}>
@@ -630,10 +787,47 @@ const AssetStore = () => {
                       <div style={styles.inputGroup}><label>Supplier Address:</label><input type="text" value={supplierAddress} onChange={(e) => setSupplierAddress(e.target.value)} style={styles.input} /></div>
                     </div>
                     <div style={styles.formRow}>
-                      <div style={styles.inputGroup}><label>Source:</label><select value={source} onChange={(e) => setSource(e.target.value)} style={styles.input}><option value="">Select Source</option>{sourceOptions.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}</select></div>
-                      <div style={styles.inputGroup}><label>Mode of Purchase:</label><select value={modeOfPurchase} onChange={(e) => setModeOfPurchase(e.target.value)} style={styles.input}><option value="">Select Mode</option>{modeOfPurchaseOptions.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}</select></div>
-                      <div style={styles.inputGroup}><label>Bill No:</label><input type="text" value={billNo} onChange={(e) => setBillNo(e.target.value)} style={styles.input} /></div>
-                    </div>
+  <div style={styles.inputGroup}>
+    <label>Source:</label>
+    <select value={source} onChange={(e) => setSource(e.target.value)} style={styles.input}>
+      <option value="">Select Source</option>
+      {sourceOptions.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+    {source === "Other" && (
+      <input
+        type="text"
+        value={customSource}
+        onChange={(e) => setCustomSource(e.target.value)}
+        placeholder="Enter custom source"
+        style={{ ...styles.input, marginTop: "5px" }}
+      />
+    )}
+  </div>
+  <div style={styles.inputGroup}>
+    <label>Mode of Purchase:</label>
+    <select value={modeOfPurchase} onChange={(e) => setModeOfPurchase(e.target.value)} style={styles.input}>
+      <option value="">Select Mode</option>
+      {modeOfPurchaseOptions.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+    {modeOfPurchase === "Others" && (
+      <input
+        type="text"
+        value={customModeOfPurchase}
+        onChange={(e) => setCustomModeOfPurchase(e.target.value)}
+        placeholder="Enter custom mode"
+        style={{ ...styles.input, marginTop: "5px" }}
+      />
+    )}
+  </div>
+  <div style={styles.inputGroup}>
+    <label>Bill No:</label>
+    <input type="text" value={billNo} onChange={(e) => setBillNo(e.target.value)} style={styles.input} />
+  </div>
+</div>
                     <div style={styles.formRow}>
                       <div style={styles.inputGroup}><label>Bill Photo:</label><input type="file" onChange={handleBillPhotoChange} />{billPhotoUrl && <img src={billPhotoUrl} alt="Bill Photo" width="100" />}</div>
                       <div style={styles.inputGroup}><label>Received By:</label><input type="text" value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} style={styles.input} /></div>
@@ -722,127 +916,295 @@ const AssetStore = () => {
                   </>
                 )}
 
-                {assetCategory && assetCategory !== "Building" && assetCategory !== "Land" && (
-                  <>
-                    <h3>Items</h3>
-                    {items.map((item, index) => (
-                      <div key={index} style={styles.itemContainer}>
-                        <div style={styles.itemRow}>
-                          <div style={styles.inputGroup}>
-                            <label>Item Sub Category:</label>
-                            <select value={item.subCategory} onChange={(e) => handleItemChange(index, "subCategory", e.target.value)} style={styles.input} disabled={!subCategoryOptions[assetCategory]}>
-                              <option value="">Select Sub Category</option>
-                              {subCategoryOptions[assetCategory]?.map((sub) => (<option key={sub} value={sub}>{sub}</option>))}
-                            </select>
-                          </div>
-                          {item.subCategory === "Others" && (
-                            <div style={styles.inputGroup}>
-                              <label>Custom Sub Category:</label>
-                              <input type="text" value={item.customSubCategory} onChange={(e) => handleItemChange(index, "customSubCategory", e.target.value)} style={styles.input} />
-                            </div>
-                          )}
-                          <div style={styles.inputGroup}>
-                            <label>Item Name:</label>
-                            {itemNameOptions[item.subCategory] ? (
-                              <select value={item.itemName} onChange={(e) => handleItemChange(index, "itemName", e.target.value)} style={styles.input}>
-                                <option value="">Select Item Name</option>
-                                {itemNameOptions[item.subCategory].map((name) => (<option key={name} value={name}>{name}</option>))}
-                              </select>
-                            ) : (
-                              <input type="text" value={item.itemName} onChange={(e) => handleItemChange(index, "itemName", e.target.value)} style={styles.input} />
-                            )}
-                          </div>
-                          {itemNameOptions[item.subCategory] && item.itemName === "Others" && (
-                            <div style={styles.inputGroup}>
-                              <label>Custom Item Name:</label>
-                              <input type="text" value={item.customItemName} onChange={(e) => handleItemChange(index, "customItemName", e.target.value)} style={styles.input} />
-                            </div>
-                          )}
-                        </div>
-                        <div style={styles.itemRow}>
-                          <div style={styles.inputGroup}><label>Item Description:</label><input type="text" value={item.itemDescription} onChange={(e) => handleItemChange(index, "itemDescription", e.target.value)} style={styles.input} /></div>
-                          <div style={styles.inputGroup}><label>Quantity Received:</label><input type="number" value={item.quantityReceived} onChange={(e) => handleItemChange(index, "quantityReceived", e.target.value)} style={styles.input} /></div>
-                          <div style={styles.inputGroup}>
-                            <label>AMC Date:</label>
-                            <input
-                              type="date"
-                              value={item.amcDate}
-                              onChange={(e) => handleItemChange(index, "amcDate", e.target.value)}
-                              style={styles.input}
-                            />
-                          </div>
-                        </div>
-                        <div style={styles.itemRow}>
-                          <div style={styles.inputGroup}><label>Unit Price:</label><input type="number" value={item.unitPrice} onChange={(e) => handleItemChange(index, "unitPrice", e.target.value)} style={styles.input} /></div>
-                          <div style={styles.inputGroup}><label>Overall Price:</label><input type="number" value={item.overallPrice} onChange={(e) => handleItemChange(index, "overallPrice", e.target.value)} style={styles.input} /></div>
-                          <div style={styles.inputGroup}><label>Item Photo {index + 1}:</label><input type="file" onChange={(e) => handleItemPhotoChange(e, index)} />{itemPhotoUrls[`itemPhoto${index}`] && <img src={itemPhotoUrls[`itemPhoto${index}`]} alt={`Item Photo ${index + 1}`} width="100" />}</div>
-                        </div>
-                        <div style={styles.itemRow}>
-                          <div style={styles.inputGroup}><button onClick={() => toggleIdInputs(index)} style={styles.button}>{item.showIdInputs ? "Hide IDs" : "Assign IDs"}</button></div>
-                        </div>
-                        {item.showIdInputs && (
-                          <div style={styles.itemRow}>
-                            {item.itemIds.map((id, idIndex) => (
-                              <div key={idIndex} style={styles.inputGroup}>
-                                <label>ID {idIndex + 1}:</label>
-                                <input type="text" value={id} onChange={(e) => handleItemIdChange(index, idIndex, e.target.value)} style={styles.input} />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <div style={styles.buttonContainer}><button onClick={addItem} style={styles.button}><FaPlus /> Add Item</button></div>
-                  </>
-                )}
+{assetCategory && assetCategory !== "Building" && assetCategory !== "Land" && (
+  <>
+    <h3>Items</h3>
+    {items.map((item, index) => (
+      <div key={index} style={styles.itemContainer}>
+        <div style={styles.itemRow}>
+          {assetType === "Permanent" && (
+            <>
+              <div style={styles.inputGroup}>
+                <label>Item Sub Category:</label>
+                <select
+                  value={item.subCategory}
+                  onChange={(e) => handleItemChange(index, "subCategory", e.target.value)}
+                  style={styles.input}
+                  disabled={!subCategoryOptions[assetCategory]}
+                >
+                  <option value="">Select Sub Category</option>
+                  {subCategoryOptions[assetCategory]?.map((sub) => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+              {item.subCategory === "Others" && (
+                <div style={styles.inputGroup}>
+                  <label>Custom Sub Category:</label>
+                  <input
+                    type="text"
+                    value={item.customSubCategory}
+                    onChange={(e) => handleItemChange(index, "customSubCategory", e.target.value)}
+                    style={styles.input}
+                  />
+                </div>
+              )}
+            </>
+          )}
+          <div style={styles.inputGroup}>
+            <label>Item Name:</label>
+            {assetType === "Permanent" && itemNameOptions[item.subCategory] ? (
+              <select
+                value={item.itemName}
+                onChange={(e) => handleItemChange(index, "itemName", e.target.value)}
+                style={styles.input}
+              >
+                <option value="">Select Item Name</option>
+                {itemNameOptions[item.subCategory].map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={item.itemName}
+                onChange={(e) => handleItemChange(index, "itemName", e.target.value)}
+                style={styles.input}
+              />
+            )}
+          </div>
+          {assetType === "Permanent" && itemNameOptions[item.subCategory] && item.itemName === "Others" && (
+            <div style={styles.inputGroup}>
+              <label>Custom Item Name:</label>
+              <input
+                type="text"
+                value={item.customItemName}
+                onChange={(e) => handleItemChange(index, "customItemName", e.target.value)}
+                style={styles.input}
+              />
+            </div>
+          )}
+        </div>
+        <div style={styles.itemRow}>
+          <div style={styles.inputGroup}>
+            <label>Item Description:</label>
+            <input
+              type="text"
+              value={item.itemDescription}
+              onChange={(e) => handleItemChange(index, "itemDescription", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label>Quantity Received:</label>
+            <input
+              type="number"
+              value={item.quantityReceived}
+              onChange={(e) => handleItemChange(index, "quantityReceived", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+          
+        </div>
+        <div style={styles.itemRow}>
+          <div style={styles.inputGroup}>
+            <label>Unit Price:</label>
+            <input
+              type="number"
+              value={item.unitPrice}
+              onChange={(e) => handleItemChange(index, "unitPrice", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label>Overall Price:</label>
+            <input
+              type="number"
+              value={item.overallPrice}
+              onChange={(e) => handleItemChange(index, "overallPrice", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label>Item Photo {index + 1}:</label>
+            <input type="file" onChange={(e) => handleItemPhotoChange(e, index)} />
+            {itemPhotoUrls[`itemPhoto${index}`] && (
+              <img src={itemPhotoUrls[`itemPhoto${index}`]} alt={`Item Photo ${index + 1}`} width="100" />
+            )}
+          </div>
+        </div>
+        <div style={styles.itemRow}>
+      <div style={styles.inputGroup}>
+        <label>AMC From Date:</label>
+        <input type="date" value={item.amcFromDate} onChange={(e) => handleItemChange(index, "amcFromDate", e.target.value)} style={styles.input} />
+      </div>
+      <div style={styles.inputGroup}>
+        <label>AMC To Date:</label>
+        <input type="date" value={item.amcToDate} onChange={(e) => handleItemChange(index, "amcToDate", e.target.value)} style={styles.input} />
+      </div>
+      <div style={styles.inputGroup}>
+        <label>AMC Cost:</label>
+        <input type="number" value={item.amcCost} onChange={(e) => handleItemChange(index, "amcCost", e.target.value)} style={styles.input} />
+      </div>
+    </div>
+        <div style={styles.itemRow}>
+        <div style={styles.inputGroup}>
+        <label>AMC Photo {index + 1}:</label>
+        <input type="file" onChange={(e) => handleAmcPhotoChange(e, index)} />
+        {amcPhotoUrls[`amcPhoto${index}`] && <img src={amcPhotoUrls[`amcPhoto${index}`]} alt={`AMC Photo ${index + 1}`} width="100" />}
+      </div>
+          <div style={styles.inputGroup}>
+            <label>Warranty Number:</label>
+            <input type="text" value={item.warrantyNumber} onChange={(e) => handleItemChange(index, "warrantyNumber", e.target.value)} style={styles.input} />
+          </div>
+          <div style={styles.inputGroup}>
+            <label>Warranty Valid Upto:</label>
+            <input type="date" value={item.warrantyValidUpto} onChange={(e) => handleItemChange(index, "warrantyValidUpto", e.target.value)} style={styles.input} />
+          </div>
+          <div style={styles.inputGroup}>
+            <label>Warranty Photo {index + 1}:</label>
+            <input type="file" onChange={(e) => handleWarrantyPhotoChange(e, index)} />
+            {warrantyPhotoUrls[`warrantyPhoto${index}`] && <img src={warrantyPhotoUrls[`warrantyPhoto${index}`]} alt={`Warranty Photo ${index + 1}`} width="100" />}
+          </div>
+        </div>
+        {assetType === "Permanent" && (
+          <div style={styles.itemRow}>
+            <div style={styles.inputGroup}>
+              <button onClick={() => toggleIdInputs(index)} style={styles.button}>
+                {item.showIdInputs ? "Hide IDs" : "Assign IDs"}
+              </button>
+            </div>
+          </div>
+        )}
+        {item.showIdInputs && assetType === "Permanent" && (
+          <div style={styles.itemRow}>
+            {item.itemIds.map((id, idIndex) => (
+              <div key={idIndex} style={styles.inputGroup}>
+                <label>ID {idIndex + 1}:</label>
+                <input
+                  type="text"
+                  value={id}
+                  onChange={(e) => handleItemIdChange(index, idIndex, e.target.value)}
+                  style={styles.input}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={styles.itemRow}>
+          <div style={styles.inputGroup}>
+            <button
+              onClick={() => removeItem(index)}
+              style={{ ...styles.button, backgroundColor: "#ff4444" }}
+            >
+              Remove Item
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+    <div style={styles.buttonContainer}>
+      <button onClick={addItem} style={styles.button}>
+        <FaPlus /> Add Item
+      </button>
+    </div>
+  </>
+)}
 
                 <div style={styles.buttonContainer}><button onClick={handleSubmitStore} style={styles.button}>Submit</button></div>
               </div>
             )}
 
-            {activeTab === "returned" && (
-              <div style={styles.formContainer}>
-                <div style={styles.formRow}>
-                  <div style={styles.inputGroup}><label>Asset Type:</label><select value={assetType} onChange={(e) => setAssetType(e.target.value)} style={styles.input}><option value="Permanent">Permanent</option><option value="Consumable">Consumable</option></select></div>
-                  <div style={styles.inputGroup}><label>Asset Category:</label><select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)} style={styles.input}><option value="">Select Category</option>{(assetType === "Permanent" ? permanentAssetOptions : consumableAssetOptions).map((option) => (<option key={option} value={option}>{option}</option>))}</select></div>
-                </div>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Asset Type</th>
-                      <th>Asset Category</th>
-                      <th>Sub Category</th>
-                      <th>Item Name</th>
-                      <th>Item Description</th>
-                      <th>Returned From</th>
-                      <th>Item ID</th>
-                      <th>Servicable or Not</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {returnedAssets.map((asset, index) => (
-                      <tr key={index}>
-                        <td>{asset.assetType}</td>
-                        <td>{asset.assetCategory}</td>
-                        <td>{asset.subCategory}</td>
-                        <td>{asset.itemName}</td>
-                        <td>{asset.itemDescription}</td>
-                        <td>{asset.returnedFromLocation}</td>
-                        <td>{asset.itemId}</td>
-                        <td>
-                          <select value={asset.condition} onChange={(e) => handleConditionChange(index, e.target.value)} style={styles.input}>
-                            <option value="Servicable">Servicable</option>
-                            <option value="Disposable">Disposable</option>
-                          </select>
-                        </td>
-                        <td><button onClick={() => handleSaveReturnedAsset(index)} style={styles.button}>Save</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+{activeTab === "returned" && (
+  <div style={styles.formContainer}>
+    <div style={styles.formRow}>
+      <div style={styles.inputGroup}><label>Asset Type:</label><select value={assetType} onChange={(e) => setAssetType(e.target.value)} style={styles.input}><option value="Permanent">Permanent</option><option value="Consumable">Consumable</option></select></div>
+      <div style={styles.inputGroup}><label>Asset Category:</label><select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)} style={styles.input}><option value="">Select Category</option>{(assetType === "Permanent" ? permanentAssetOptions : consumableAssetOptions).map((option) => (<option key={option} value={option}>{option}</option>))}</select></div>
+    </div>
+    <div style={styles.cardContainer}>
+      {returnedAssets.map((asset, index) => (
+        <div key={index} style={styles.card}>
+          <div style={styles.cardHeader}>
+            <h3>{asset.itemName || "Unnamed Item"}</h3>
+            <span style={styles.assetTypeBadge}>{asset.assetType || "N/A"}</span>
+          </div>
+          <div style={styles.cardBody}>
+            <p><strong>Category:</strong> {asset.assetCategory || "N/A"}</p>
+            <p><strong>Sub Category:</strong> {asset.subCategory || "N/A"}</p>
+            <p><strong>Description:</strong> {asset.itemDescription || "N/A"}</p>
+            <p><strong>Returned From:</strong> {asset.returnedFromLocation || "N/A"}</p>
+            {asset.assetType === "Permanent" ? (
+              <p><strong>Item ID:</strong> {asset.itemId || "N/A"}</p>
+            ) : (
+              <p><strong>Returned Quantity:</strong> {asset.returnedQuantity || "N/A"}</p>
             )}
+            <div style={styles.conditionSelect}>
+              <label><strong>Condition:</strong></label>
+              <select
+                value={asset.condition}
+                onChange={(e) => handleConditionChange(index, e.target.value)}
+                style={styles.select}
+              >
+                {asset.assetType === "Permanent" ? (
+                  <>
+                    <option value="To Be Serviced">To Be Serviced</option>
+                    <option value="To Be Disposed">To Be Disposed</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="To Be Exchanged">To Be Exchanged</option>
+                    <option value="To Be Disposed">To Be Disposed</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <div style={styles.inputGroup}>
+              <label><strong>Remark:</strong></label>
+              <input
+                type="text"
+                value={remarks[index] || ""}
+                onChange={(e) => handleRemarkChange(index, e.target.value)}
+                style={styles.input}
+                placeholder="Enter remark"
+              />
+            </div>
+            <div style={styles.actionGroup}>
+              <button onClick={() => handleDownloadReceipt(index)} style={styles.button}>
+                Download Receipt
+              </button>
+              <div style={styles.uploadGroup}>
+                <label style={styles.uploadLabel}><strong>Signed Receipt:</strong></label>
+                <input
+                  type="file"
+                  onChange={(e) => handleUploadSignedReceipt(index, e.target.files[0])}
+                  accept="application/pdf"
+                  style={styles.fileInput}
+                />
+                {asset.signedPdfUrl && (
+                  <a href={asset.signedPdfUrl} target="_blank" rel="noopener noreferrer" style={styles.link}>View</a>
+                )}
+              </div>
+            </div>
+            <div style={styles.doneButtonContainer}>
+              <button
+                onClick={() => handleDoneReturnedAsset(index)}
+                style={{
+                  ...styles.button,
+                  backgroundColor: asset.signedPdfUrl ? "#007BFF" : "#ccc",
+                  cursor: asset.signedPdfUrl ? "pointer" : "not-allowed",
+                  width: "100%",
+                }}
+                disabled={!asset.signedPdfUrl}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
             {activeTab === "serviced" && (
               <div style={styles.formContainer}>
@@ -910,149 +1272,174 @@ const AssetStore = () => {
               </div>
             )}
 
-            {
-              activeTab === "disposable" && assetCategory !== "Land" && (
-                <div style={styles.formContainer}>
-                  <div style={styles.formRow}>
-                    <div style={styles.inputGroup}>
-                      <label>Asset Type:</label>
-                      <select
-                        value={assetType}
-                        onChange={(e) => setAssetType(e.target.value)}
-                        style={styles.input}
-                      >
-                        <option value="Permanent">Permanent</option>
-                        <option value="Consumable">Consumable</option>
-                      </select>
-                    </div>
-                    <div style={styles.inputGroup}>
-                      <label>Asset Category:</label>
-                      <select
-                        value={assetCategory}
-                        onChange={(e) => setAssetCategory(e.target.value)}
-                        style={styles.input}
-                      >
-                        <option value="">Select Category</option>
-                        {(assetType === "Permanent"
-                          ? permanentAssetOptions.filter((opt) => opt !== "Land")
-                          : consumableAssetOptions
-                        ).map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={styles.inputGroup}>
-                      <label>Item:</label>
-                      <select
-                        value={`${disposableData.itemName} - ${disposableData.subCategory} - ${disposableData.itemDescription}`}
-                        onChange={(e) => {
-                          const [itemName, subCategory, itemDescription] = e.target.value.split(" - ");
-                          setDisposableData((prev) => ({
-                            ...prev,
-                            itemName,
-                            subCategory,
-                            itemDescription,
-                          }));
-                        }}
-                        style={styles.input}
-                      >
-                        <option value="">Select Item</option>
-                        {storeItems.map((item) => (
-                          <option
-                            key={`${item.itemName}-${item.subCategory}-${item.itemDescription}`}
-                            value={`${item.itemName} - ${item.subCategory} - ${item.itemDescription}`}
-                          >
-                            {`${item.itemName} - ${item.subCategory} - ${item.itemDescription}`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div style={styles.formRow}>
-                    <div style={styles.inputGroup}>
-                      <label>Purchase Value:</label>
-                      <input
-                        type="number"
-                        value={disposableData.purchaseValue}
-                        disabled
-                        style={styles.input}
-                      />
-                    </div>
-                    <div style={styles.inputGroup}>
-                      <label>Book Value:</label>
-                      <input
-                        type="number"
-                        value={disposableData.bookValue}
-                        onChange={(e) => handleDisposableChange("bookValue", parseFloat(e.target.value) || 0)}
-                        style={styles.input}
-                      />
-                    </div>
-                    <div style={styles.inputGroup}>
-                      <label>Inspection Date:</label>
-                      <input
-                        type="date"
-                        value={disposableData.inspectionDate}
-                        onChange={(e) => handleDisposableChange("inspectionDate", e.target.value)}
-                        style={styles.input}
-                      />
-                    </div>
-                  </div>
-                  <div style={styles.formRow}>
-                    <div style={styles.inputGroup}>
-                      <label>Condemnation Date:</label>
-                      <input
-                        type="date"
-                        value={disposableData.condemnationDate}
-                        onChange={(e) => handleDisposableChange("condemnationDate", e.target.value)}
-                        style={styles.input}
-                      />
-                    </div>
-                    <div style={styles.inputGroup}>
-                      <label>Remark:</label>
-                      <input
-                        type="text"
-                        value={disposableData.remark}
-                        onChange={(e) => handleDisposableChange("remark", e.target.value)}
-                        style={styles.input}
-                      />
-                    </div>
-                    <div style={styles.inputGroup}>
-                      <label>Disposal Value:</label>
-                      <input
-                        type="number"
-                        value={disposableData.disposalValue}
-                        onChange={(e) => handleDisposableChange("disposalValue", parseFloat(e.target.value) || 0)}
-                        style={styles.input}
-                      />
-                    </div>
-                  </div>
-                  {assetCategory !== "Building" && (
-                    <div style={styles.inputGroup}>
-                      <label>Select Disposable Item IDs:</label>
-                      <div style={styles.checkboxContainer}>
-                        {disposableItems.map((id) => (
-                          <label key={id} style={styles.checkboxLabel}>
-                            <input
-                              type="checkbox"
-                              checked={disposableData.itemIds.includes(id)}
-                              onChange={(e) => handleDisposableIdSelection(id)}
-                            />
-                            {id} {purchaseValues[id] !== undefined ? `- ₹${purchaseValues[id]}` : "- Fetching..."}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div style={styles.buttonContainer}>
-                    <button onClick={handleSubmitDisposable} style={styles.button}>
-                      Submit
-                    </button>
-                  </div>
-                </div>
-              )
-            }
+{
+  activeTab === "disposable" && assetCategory !== "Land" && (
+    <div style={styles.formContainer}>
+      <div style={styles.formRow}>
+        <div style={styles.inputGroup}>
+          <label>Asset Type:</label>
+          <select
+            value={assetType}
+            onChange={(e) => setAssetType(e.target.value)}
+            style={styles.input}
+          >
+            <option value="Permanent">Permanent</option>
+            <option value="Consumable">Consumable</option>
+          </select>
+        </div>
+        <div style={styles.inputGroup}>
+          <label>Asset Category:</label>
+          <select
+            value={assetCategory}
+            onChange={(e) => setAssetCategory(e.target.value)}
+            style={styles.input}
+          >
+            <option value="">Select Category</option>
+            {(assetType === "Permanent"
+              ? permanentAssetOptions.filter((opt) => opt !== "Land")
+              : consumableAssetOptions
+            ).map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div style={styles.inputGroup}>
+          <label>Item:</label>
+          <select
+            value={`${disposableData.itemName} - ${disposableData.subCategory} - ${disposableData.itemDescription}`}
+            onChange={(e) => {
+              const [itemName, subCategory, itemDescription] = e.target.value.split(" - ");
+              setDisposableData((prev) => ({
+                ...prev,
+                itemName,
+                subCategory,
+                itemDescription,
+              }));
+            }}
+            style={styles.input}
+          >
+            <option value="">Select Item</option>
+            {storeItems.map((item) => (
+              <option
+                key={`${item.itemName}-${item.subCategory}-${item.itemDescription}`}
+                value={`${item.itemName} - ${item.subCategory} - ${item.itemDescription}`}
+              >
+                {`${item.itemName} - ${item.subCategory} - ${item.itemDescription}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div style={styles.formRow}>
+        <div style={styles.inputGroup}>
+          <label>Available Quantity:</label>
+          <input
+            type="number"
+            value={availableQuantity}
+            disabled
+            style={styles.input}
+          />
+        </div>
+          <div style={styles.inputGroup}>
+            <label>Disposal Quantity:</label>
+            <input
+              type="number"
+              value={disposableData.quantity}
+              onChange={(e) => handleDisposableChange("quantity", parseInt(e.target.value) || 0)}
+              max={availableQuantity}
+              min="0"
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label>Purchase Value:</label>
+            <input
+              type="number"
+              value={disposableData.purchaseValue}
+              disabled
+              style={styles.input}
+            />
+          </div>
+        
+      </div>
+      <div style={styles.formRow}>
+      <div style={styles.inputGroup}>
+          <label>Book Value:</label>
+          <input
+            type="number"
+            value={disposableData.bookValue}
+            onChange={(e) => handleDisposableChange("bookValue", parseFloat(e.target.value) || 0)}
+            style={styles.input}
+          />
+        </div>
+        <div style={styles.inputGroup}>
+          <label>Inspection Date:</label>
+          <input
+            type="date"
+            value={disposableData.inspectionDate}
+            onChange={(e) => handleDisposableChange("inspectionDate", e.target.value)}
+            style={styles.input}
+          />
+        </div>
+        <div style={styles.inputGroup}>
+          <label>Condemnation Date:</label>
+          <input
+            type="date"
+            value={disposableData.condemnationDate}
+            onChange={(e) => handleDisposableChange("condemnationDate", e.target.value)}
+            style={styles.input}
+          />
+        </div>
+        
+      </div>
+      <div style={styles.formRow}>
+        <div style={styles.inputGroup}>
+          <label>Disposal Value:</label>
+          <input
+            type="number"
+            value={disposableData.disposalValue}
+            onChange={(e) => handleDisposableChange("disposalValue", parseFloat(e.target.value) || 0)}
+            style={styles.input}
+          />
+        </div>
+        <div style={styles.inputGroup}>
+          <label>Remark:</label>
+          <input
+            type="text"
+            value={disposableData.remark}
+            onChange={(e) => handleDisposableChange("remark", e.target.value)}
+            style={styles.input}
+          />
+        </div>
+      </div>
+      {assetType === "Permanent" && assetCategory !== "Building" && (
+        <div style={styles.inputGroup}>
+          <label>Select Disposable Item IDs (Available: {availableQuantity}):</label>
+          <div style={styles.checkboxContainer}>
+            {disposableItems.map((id) => (
+              <label key={id} style={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={disposableData.itemIds.includes(id)}
+                  onChange={(e) => handleDisposableIdSelection(id)}
+                  disabled={disposableData.itemIds.length >= availableQuantity && !disposableData.itemIds.includes(id)}
+                />
+                {id} {purchaseValues[id] !== undefined ? `- ₹${purchaseValues[id]}` : "- Fetching..."}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+      <div style={styles.buttonContainer}>
+        <button onClick={handleSubmitDisposable} style={styles.button}>
+          Submit
+        </button>
+      </div>
+    </div>
+  )
+}
           </div>
         </main>
       </section>
@@ -1078,9 +1465,102 @@ const styles = {
   username: { fontWeight: "bold", fontSize: "18px" },
   checkboxContainer: { display: "flex", flexDirection: "column", maxHeight: "150px", overflowY: "auto", border: "1px solid #ddd", padding: "10px", borderRadius: "5px" },
   checkboxLabel: { margin: "5px 0" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  "table th, table td": { border: "1px solid #ddd", padding: "8px", textAlign: "left" },
-  "table th": { backgroundColor: "#f4f4f4" },
+  menuBar: { width: "100%", backgroundColor: "#f4f4f4", padding: "10px 0", display: "flex", justifyContent: "center", gap: "20px", position: "fixed", top: "60px", left: 0, zIndex: 1000, boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" },
+  container: { width: "100%", margin: "80px auto 20px", padding: "20px", borderRadius: "10px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", backgroundColor: "#fff" },
+  tab: { padding: "10px 20px", border: "none", backgroundColor: "#ddd", cursor: "pointer", borderRadius: "5px", fontSize: "16px" },
+  activeTab: { padding: "10px 20px", border: "none", backgroundColor: "#007BFF", color: "#fff", cursor: "pointer", borderRadius: "5px", fontSize: "16px" },
+  formContainer: { display: "flex", flexDirection: "column", gap: "20px" },
+  formRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" },
+  input: { padding: "8px", borderRadius: "5px", border: "1px solid #ddd", width: "100%" },
+  itemContainer: { border: "1px solid #ddd", padding: "15px", borderRadius: "5px", marginBottom: "20px" },
+  itemRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px", marginBottom: "15px" },
+  inputGroup: { display: "flex", flexDirection: "column" },
+  buttonContainer: { display: "flex", gap: "10px", justifyContent: "flex-start" },
+  button: { padding: "10px 20px", backgroundColor: "#007BFF", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" },
+  usernameContainer: { display: "flex", alignItems: "center", gap: "10px" },
+  userIcon: { fontSize: "30px", color: "#007BFF" },
+  username: { fontWeight: "bold", fontSize: "18px" },
+  checkboxContainer: { display: "flex", flexDirection: "column", maxHeight: "150px", overflowY: "auto", border: "1px solid #ddd", padding: "10px", borderRadius: "5px" },
+  checkboxLabel: { margin: "5px 0" },
+  // Remove table-specific styles
+  // table: { width: "100%", borderCollapse: "collapse" },
+  // "table th, table td": { border: "1px solid #ddd", padding: "8px", textAlign: "left" },
+  // "table th": { backgroundColor: "#f4f4f4" },
+  // Add new card styles
+  cardContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: "20px",
+    padding: "20px",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: "10px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    overflow: "hidden",
+    transition: "transform 0.2s",
+    display: "flex",
+    flexDirection: "column",
+  },
+  cardHeader: {
+    backgroundColor: "#007BFF",
+    color: "#fff",
+    padding: "15px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  assetTypeBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    padding: "5px 10px",
+    borderRadius: "15px",
+    fontSize: "12px",
+  },
+  cardBody: {
+    padding: "15px",
+    fontSize: "14px",
+    color: "#333",
+    flexGrow: 1,
+  },
+  conditionSelect: {
+    marginTop: "10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+  },
+  select: {
+    padding: "8px",
+    borderRadius: "5px",
+    border: "1px solid #ddd",
+    backgroundColor: "#f9f9f9",
+    cursor: "pointer",
+  },
+  actionGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginTop: "15px",
+  },
+  uploadGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  uploadLabel: {
+    fontWeight: "bold",
+  },
+  fileInput: {
+    padding: "5px",
+  },
+  link: {
+    color: "#007BFF",
+    textDecoration: "none",
+    fontWeight: "bold",
+  },
+  doneButtonContainer: {
+    padding: "15px",
+    borderTop: "1px solid #eee",
+  },
 };
 
 export default AssetStore;
