@@ -5,7 +5,7 @@ const { validateAssetCategory, validateSubCategory, validateItemName } = require
 const tempAssetSchema = new mongoose.Schema({
   assetType: {
     type: String,
-    enum: ["Permanent", "Consumable"], // Allow both types
+    enum: ["Permanent", "Consumable"], 
     required: false,
   },
   assetCategory: {
@@ -13,7 +13,7 @@ const tempAssetSchema = new mongoose.Schema({
     required: false,
     validate: {
       validator: function (value) {
-        if (!this.assetType) return true; // Skip validation if assetType is not provided
+        if (!this.assetType) return true; 
         return validateAssetCategory(this.assetType)(value);
       },
       message: (props) => `${props.value} is not a valid asset category for assetType ${props.instance.assetType}!`,
@@ -39,8 +39,8 @@ const tempAssetSchema = new mongoose.Schema({
   purchaseDate: { type: Date, required: false },
   supplierName: { type: String, required: false },
   supplierAddress: { type: String, required: false },
-  source: { type: String, enum: ["GEM", "Local", "Other"], required: false },
-  modeOfPurchase: { type: String, enum: ["Tender", "Quotation", "Others"], required: false },
+  source: { type: String , required: false },
+  modeOfPurchase: { type: String, required: false },
   billNo: { type: String, required: false },
   receivedBy: { type: String, required: false },
   billPhotoUrl: { type: String, required: false },
@@ -69,15 +69,15 @@ const tempAssetSchema = new mongoose.Schema({
     quantityReceived: { type: Number, required: false },
     unitPrice: { type: Number, required: false },
     totalPrice: { type: Number }, // Changed from overallPrice
-    amcFromDate: { type: Date, required: false },  // Add this
-    amcToDate: { type: Date, required: false },    // Add this
-    amcCost: { type: Number, required: false },    // Add this
-    amcPhotoUrl: { type: String, required: false }, // Add this
-     itemPhotoUrl: { type: String, required: false },
+    amcFromDate: { type: Date, required: false },
+    amcToDate: { type: Date, required: false },
+    amcCost: { type: Number, required: false },
+    amcPhotoUrl: { type: String, required: false },
+    itemPhotoUrl: { type: String, required: false },
 
-    warrantyNumber: { type: String }, // New field
-      warrantyValidUpto: { type: Date }, // New field
-      warrantyPhotoUrl: { type: String },
+    warrantyNumber: { type: String },
+    warrantyValidUpto: { type: Date },
+    warrantyPhotoUrl: { type: String },
     itemIds: [{ type: String }],
   }],
 
@@ -88,11 +88,15 @@ const tempAssetSchema = new mongoose.Schema({
 
   // Fields from buildingSchema
   type: { type: String, required: false },
-  buildingNo: { type: String,  required: false },
+  buildingNo: { type: String, required: false },
+  approvedEstimate: { type: String, required: false },
   plinthArea: { type: String, required: false },
   dateOfConstruction: { type: Date, required: false },
   costOfConstruction: { type: Number, required: false },
   remarks: { type: String, required: false },
+  approvedBuildingPlanUrl: { type: String },
+  kmzOrkmlFileUrl: { type: String },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("TempAsset", tempAssetSchema);

@@ -44,6 +44,11 @@ const exchangedConsumableSchema = new mongoose.Schema({
     ref: "ReturnedConsumable",
     required: true,
   },
+  approved: {
+    type: String,
+    enum: [null, "yes", "no", "rejected"], // Allow null, "yes", "no", "rejected"
+    default: null,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model("ExchangedConsumable", exchangedConsumableSchema);

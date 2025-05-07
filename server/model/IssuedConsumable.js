@@ -35,6 +35,10 @@ const IssuedConsumableSchema = new mongoose.Schema({
       minlength: 2,
       maxlength: 100
     },
+    location: { 
+      type: String, 
+      required: false,
+    }, // New field
     quantity: { 
       type: Number, 
       required: true,

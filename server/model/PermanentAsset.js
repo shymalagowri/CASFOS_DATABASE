@@ -17,20 +17,18 @@ const permanentSchema = new mongoose.Schema({
   },
   entryDate: { type: Date, required: true },
   purchaseDate: { type: Date, required: true },
-  supplierName: { type: String, required: true },
-  supplierAddress: { type: String, required: true },
+  supplierName: { type: String, required: false },
+  supplierAddress: { type: String, required: false },
   source: {
     type: String,
-    enum: ["GEM", "Local", "Other"],
-    required: true,
+    required: false,
   },
   modeOfPurchase: {
     type: String,
-    enum: ["Tender", "Quotation", "Others"],
-    required: true,
+    required: false,
   },
-  billNo: { type: String, required: true },
-  receivedBy: { type: String, required: true },
+  billNo: { type: String, required: false },
+  receivedBy: { type: String, required: false },
   billPhotoUrl: { type: String },
   items: [
     {
@@ -60,11 +58,11 @@ const permanentSchema = new mongoose.Schema({
       amcFromDate: { type: Date, required: false },  // Add this
       amcToDate: { type: Date, required: false },    // Add this
       amcCost: { type: Number, required: false },    // Add this
-      amcPhotoUrl: { type: String, required: false }, 
-        itemPhotoUrl: { type: String },
+      amcPhotoUrl: { type: String, required: false },
+      itemPhotoUrl: { type: String },
       warrantyNumber: { type: String },
-    warrantyValidUpto: { type: Date },
-    warrantyPhotoUrl: { type: String },
+      warrantyValidUpto: { type: Date },
+      warrantyPhotoUrl: { type: String },
       itemIds: [{ type: String }],
     },
   ],

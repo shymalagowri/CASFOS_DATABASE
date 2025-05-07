@@ -338,6 +338,10 @@ const facultySchema = new mongoose.Schema({
     required: true,
     trim: true,
     default: () => `FAC${Date.now()}`
+  },
+  reentered: {
+    type: Boolean,
+    default: false
   }
 });
 

@@ -16,7 +16,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/faculty', facultyRoutes);
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3050;
 
 const start = async () => {
     try {
@@ -28,12 +28,5 @@ const start = async () => {
         console.error(error);
     }
 };
-
-
-
-
-
-
-
 
 start();

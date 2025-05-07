@@ -39,6 +39,7 @@ const domainOptions = {
   "Disaster Management": [
     "Forest Fire Management & Damage assessment",
     "Cyclone",
+    "Disaster Management",
     "Flood",
     "Desertification",
     "Others"
@@ -92,7 +93,7 @@ const domainOptions = {
     "Others"
   ],
   "Media Management": [
-    "The Art of Interacting with Print and Electronic Media",
+    "The Art of Interacting with Print and Elementary Media",
     "Role of Media",
     "Media Relations and Image Management",
     "Proactive Media Engagement",
@@ -106,7 +107,7 @@ const facultySchema = new mongoose.Schema({
     type: String, 
     required: true,
     trim: true,
-    enum: ['internal', 'external', 'contract'] // Updated to include 'contract'
+    enum: ['internal', 'external', 'contract']
   },
   name: { 
     type: String,
@@ -154,7 +155,7 @@ const facultySchema = new mongoose.Schema({
     match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
   },
   photograph: { 
-    type: String // Store as file path or URL after upload
+    type: String
   },
   presentPlaceOfWorking: { 
     type: String,
@@ -164,12 +165,17 @@ const facultySchema = new mongoose.Schema({
     type: String,
     trim: true,
     enum: ['retired', 'serving'],
-    default: 'serving' // Default added
+    default: 'serving'
   },
   conduct: { 
     type: String,
     trim: true,
-    default: '' // Default added
+    default: ''
+  },
+  remarks: { // New field added
+    type: String,
+    trim: true,
+    default: ''
   },
   modulesHandled: [{ 
     type: String,
@@ -201,16 +207,16 @@ const facultySchema = new mongoose.Schema({
     typeOfPublication: {
       type: String,
       enum: ['Books Published', 'Articles Published', 'Manuals', 'Others'],
-      default: 'Others' // Default added
+      default: 'Others'
     },
     title: {
       type: String,
       trim: true,
-      default: '' // Default instead of required
+      default: ''
     },
     dateOfPublication: {
       type: Date,
-      default: null // Default instead of required
+      default: null
     },
     additionalDetails: {
       type: String,
@@ -247,16 +253,16 @@ const facultySchema = new mongoose.Schema({
         'Others',
         ''
       ],
-      default: '' // Default added instead of required
+      default: ''
     },
     batchno: {
       type: Number,
-      default: null // Default added instead of required
+      default: null
     },
     title: {
       type: String,
       trim: true,
-      default: '' // Default added instead of required
+      default: ''
     },
     feedbackRating: {
       type: Number,
@@ -318,7 +324,7 @@ const facultySchema = new mongoose.Schema({
     responsibility: {
       type: String,
       trim: true,
-      default: '' // Default added
+      default: ''
     }
   }],
   joined: { 

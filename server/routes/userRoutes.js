@@ -6,7 +6,6 @@ const {
     registerUser,
     loginUser,
     rejectUser,
-    checkUser
 } = require('../controllers/userController');
 
 // Route for getting all temporary users
@@ -22,6 +21,5 @@ router.post('/reject/:id', rejectUser);
 
 // Route for user login
 router.post('/login', loginUser);
-router.post('/checkUser',checkUser);
 
 module.exports = router;

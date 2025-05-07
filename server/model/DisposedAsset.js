@@ -3,17 +3,30 @@ const mongoose = require("mongoose");
 const disposedAssetSchema = new mongoose.Schema({
   assetType: { type: String, required: true },
   assetCategory: { type: String, required: true },
-  itemName: { type: String, required: true },
+
+  // Fields for non-building assets (no longer required)
+  itemName: { type: String, required: false },
   subCategory: { type: String, required: false },
-  itemDescription: { type: String, required: true },
+  itemDescription: { type: String, required: false },
+  quantity: { type: Number, required: false },
   itemIds: [{ type: String, required: false }],
-  quantity: { type: Number, required: true },  // Added quantity field
-  purchaseValue: { type: Number, required: true },
-  bookValue: { type: Number, required: true },
-  inspectionDate: { type: Date, required: true },
-  condemnationDate: { type: Date, required: true },
-  remark: { type: String, required: true },
-  disposalValue: { type: Number, required: true },
+  purchaseValue: { type: Number, required: false },
+  bookValue: { type: Number, required: false },
+  inspectionDate: { type: Date, required: false },
+  condemnationDate: { type: Date, required: false },
+  remark: { type: String, required: false },
+  disposalValue: { type: Number, required: false },
+  methodOfDisposal: { type: String, required: false }, // Added
+  // fields for building condemnation (not required)
+  condemnationYear: { type: Number, required: false }, 
+  certificateObtained: { type: String, enum: ["Yes", "No"], required: false }, 
+  authority: { type: String, required: false }, 
+  dateOfReferenceUrl: { type: String, required: false },
+  agency: { type: String, required: false }, 
+  agencyReferenceNumberUrl: { type: String, required: false }, 
+  date: { type: Date, required: false },
+  demolitionPeriod: { type: String, required: false },
+  demolitionEstimate: { type: Number, required: false },
 });
 
 module.exports = mongoose.model("DisposedAsset", disposedAssetSchema);

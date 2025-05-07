@@ -3,6 +3,8 @@ import axios from "axios";
 import { useLocation } from "react-router-dom";
 
 const FacultyView = () => {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const [facultyType, setFacultyType] = useState("");
   const [name, setName] = useState("");
   const [yearOfAllotment, setYearOfAllotment] = useState("");
@@ -22,6 +24,7 @@ const FacultyView = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
+  
   const domainOptions = {
     "Forest & Wildlife": [
       "Silviculture",
@@ -44,7 +47,7 @@ const FacultyView = () => {
       "Computer Application, Remote Sensing and GIS in Forestry",
       "Urban Forestry/Recreation Forestry & Land Scaping",
     ],
-    "Environment": [
+    Environment: [
       "Environmental Laws & Management",
       "Climate Change: Adaptation & Mitigation",
       "Wasteland Management",
@@ -121,22 +124,23 @@ const FacultyView = () => {
       "Others",
     ],
   };
+
   useEffect(() => {
     const handleApplyFilter = async () => {
       try {
-        const response = await axios.post("http://localhost:3001/api/faculty/filterFaculties", {
-          facultyType,
-          name,
-          yearOfAllotment,
-          email,
-          domainKnowledge,
-          areaOfExpertise,
-          institution,
-          status,
+        const response = await axios.post(`http://${ip}:${port}/api/faculty/filterFaculties`, {
+          facultyType: facultyType || undefined,
+          name: name || undefined,
+          yearOfAllotment: yearOfAllotment || undefined,
+          email: email || undefined,
+          domainKnowledge: domainKnowledge || undefined,
+          areaOfExpertise: areaOfExpertise || undefined,
+          institution: institution || undefined,
+          status: status || undefined,
           modulesHandled: modulesHandled ? [modulesHandled] : undefined,
           majorDomains: majorDomains.length > 0 ? majorDomains : undefined,
           minorDomains: minorDomains.length > 0 ? minorDomains : undefined,
-          mobileNumber,
+          mobileNumber: mobileNumber || undefined,
         });
 
         if (response.data.length > 0) {
@@ -149,6 +153,7 @@ const FacultyView = () => {
       } catch (error) {
         setTableData([]);
         setMessage("No matching records.");
+        console.error("Error fetching filtered data:", error);
       }
     };
     handleApplyFilter();
@@ -164,13 +169,13 @@ const FacultyView = () => {
     areaOfExpertise,
     institution,
     mobileNumber,
-    domainKnowledge
+    domainKnowledge,
   ]);
 
   const renderPopupContent = (data) => {
     const renderValue = (value, key) => {
       if (key === "photograph" && typeof value === "string") {
-        const imageUrl = `http://localhost:3001/uploads/${value.split("\\").pop()}`;
+        const imageUrl = `http://${ip}:${port}/uploads/${value.split("\\").pop()}`;
         return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "5px" }} />;
       }
 
@@ -202,7 +207,7 @@ const FacultyView = () => {
     };
 
     return Object.entries(data)
-      .filter(([key]) => key !== "_id")
+      .filter(([key]) => key !== "_id" && key !== "conduct")
       .map(([key, value]) => (
         <tr key={key}>
           <td style={{ fontWeight: "bold", padding: "10px", border: "1px solid #ddd" }}>
@@ -501,22 +506,37 @@ const FacultyView = () => {
       <div className="asset-view">
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+        <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
         <title>CASFOS</title>
 
         <section id="sidebar">
           <a href="#" className="brand">
-            <span className="text">ADMIN</span>
+            <span className="text">FACULTY ENTRY STAFF</span>
           </a>
           <ul className="side-menu top">
-            <li className="active"><a href={`/facultyentrydashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-            <li><a href={`/facultyentry?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty Entry</span></a></li>
-            <li><a href={`/viewfaculty?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
+            <li>
+              <a href={`/facultyentrystaffdashboard?username=${encodeURIComponent(username)}`}>
+                <i className="bx bxs-dashboard" />
+                <span className="text">Home</span>
+              </a>
+            </li>
+            <li>
+              <a href={`/facultyentry?username=${encodeURIComponent(username)}`}>
+                <i className="bx bxs-doughnut-chart" />
+                <span className="text">Faculty Entry</span>
+              </a>
+            </li>
+            <li className="active">
+              <a href={`/viewfaculty?username=${encodeURIComponent(username)}`}>
+                <i className="bx bxs-doughnut-chart" />
+                <span className="text">Faculty View</span>
+              </a>
+            </li>
           </ul>
           <ul className="side-menu">
             <li>
-              <a href="/" className="logout">
+              <a href="/login" className="logout">
                 <i className="bx bxs-log-out-circle" />
                 <span className="text">Logout</span>
               </a>
@@ -527,7 +547,6 @@ const FacultyView = () => {
         <section id="content">
           <nav>
             <i className="bx bx-menu" />
-            <span className="head-title">Dashboard</span>
             <form action="#">
               <div className="form-input"></div>
             </form>
@@ -551,10 +570,10 @@ const FacultyView = () => {
                       value={facultyType}
                       onChange={(e) => setFacultyType(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     >
-                      <option value="">Select</option>
+                      <option value="">All</option>
                       <option value="internal">Internal</option>
                       <option value="external">External</option>
                       <option value="contract">Contract</option>
@@ -568,8 +587,8 @@ const FacultyView = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
@@ -580,8 +599,8 @@ const FacultyView = () => {
                       value={yearOfAllotment}
                       onChange={(e) => setYearOfAllotment(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
@@ -592,8 +611,8 @@ const FacultyView = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
@@ -603,10 +622,10 @@ const FacultyView = () => {
                       value={status}
                       onChange={(e) => setStatus(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     >
-                      <option value="">Select</option>
+                      <option value="">All</option>
                       <option value="serving">Serving</option>
                       <option value="retired">Retired</option>
                     </select>
@@ -619,52 +638,52 @@ const FacultyView = () => {
                       value={modulesHandled}
                       onChange={(e) => setModulesHandled(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
-  <label style={filterStyles.label} htmlFor="majorDomains">Major Domains:</label>
-  <select
-    id="majorDomains"
-    value={majorDomains[0] || ""}
-    onChange={(e) => setMajorDomains([e.target.value])}
-    style={filterStyles.input}
-    onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-    onBlur={(e) => e.target.style.borderColor = "#ddd"}
-  >
-    <option value="">Select Major Domain</option>
-    {Object.keys(domainOptions).map((domain) => (
-      <option key={domain} value={domain}>
-        {domain}
-      </option>
-    ))}
-  </select>
-</div>
-<div style={filterStyles.filterItem}>
-  <label style={filterStyles.label} htmlFor="minorDomains">Minor Domains:</label>
-  <select
-    id="minorDomains"
-    value={minorDomains[0] || ""}
-    onChange={(e) => setMinorDomains([e.target.value])}
-    disabled={!majorDomains[0]}
-    style={{
-      ...filterStyles.input,
-      opacity: !majorDomains[0] ? 0.7 : 1,
-      cursor: !majorDomains[0] ? 'not-allowed' : 'pointer'
-    }}
-    onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-    onBlur={(e) => e.target.style.borderColor = "#ddd"}
-  >
-    <option value="">Select Minor Domain</option>
-    {majorDomains[0] &&
-      domainOptions[majorDomains[0]]?.map((subDomain) => (
-        <option key={subDomain} value={subDomain}>
-          {subDomain}
-        </option>
-      ))}
-  </select>
-</div>
+                    <label style={filterStyles.label} htmlFor="majorDomains">Major Domains:</label>
+                    <select
+                      id="majorDomains"
+                      value={majorDomains[0] || ""}
+                      onChange={(e) => setMajorDomains(e.target.value ? [e.target.value] : [])}
+                      style={filterStyles.input}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                    >
+                      <option value="">All</option>
+                      {Object.keys(domainOptions).map((domain) => (
+                        <option key={domain} value={domain}>
+                          {domain}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={filterStyles.filterItem}>
+                    <label style={filterStyles.label} htmlFor="minorDomains">Minor Domains:</label>
+                    <select
+                      id="minorDomains"
+                      value={minorDomains[0] || ""}
+                      onChange={(e) => setMinorDomains(e.target.value ? [e.target.value] : [])}
+                      disabled={!majorDomains[0]}
+                      style={{
+                        ...filterStyles.input,
+                        opacity: !majorDomains[0] ? 0.7 : 1,
+                        cursor: !majorDomains[0] ? "not-allowed" : "pointer",
+                      }}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                    >
+                      <option value="">All</option>
+                      {majorDomains[0] &&
+                        domainOptions[majorDomains[0]]?.map((subDomain) => (
+                          <option key={subDomain} value={subDomain}>
+                            {subDomain}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                   <div style={filterStyles.filterItem}>
                     <label style={filterStyles.label} htmlFor="areaOfExpertise">Areas of Expertise:</label>
                     <input
@@ -673,8 +692,8 @@ const FacultyView = () => {
                       value={areaOfExpertise}
                       onChange={(e) => setAreaOfExpertise(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
@@ -685,8 +704,8 @@ const FacultyView = () => {
                       value={institution}
                       onChange={(e) => setInstitution(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
@@ -697,8 +716,8 @@ const FacultyView = () => {
                       value={mobileNumber}
                       onChange={(e) => setMobileNumber(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                   <div style={filterStyles.filterItem}>
@@ -709,8 +728,8 @@ const FacultyView = () => {
                       value={domainKnowledge}
                       onChange={(e) => setDomainKnowledge(e.target.value)}
                       style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
+                      onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                      onBlur={(e) => (e.target.style.borderColor = "#ddd")}
                     />
                   </div>
                 </div>
@@ -718,8 +737,8 @@ const FacultyView = () => {
                   <button
                     style={filterStyles.clearButton}
                     onClick={handleClearFilter}
-                    onMouseOver={(e) => e.target.style.backgroundColor = filterStyles.clearButtonHover.backgroundColor}
-                    onMouseOut={(e) => e.target.style.backgroundColor = filterStyles.clearButton.backgroundColor}
+                    onMouseOver={(e) => (e.target.style.backgroundColor = filterStyles.clearButtonHover.backgroundColor)}
+                    onMouseOut={(e) => (e.target.style.backgroundColor = filterStyles.clearButton.backgroundColor)}
                   >
                     Clear Filter
                   </button>
@@ -747,7 +766,7 @@ const FacultyView = () => {
                         <td>
                           {row.photograph ? (
                             <img
-                              src={`http://localhost:3001/uploads/${row.photograph.split("\\").pop()}`}
+                              src={`http://${ip}:${port}/uploads/${row.photograph.split("\\").pop()}`}
                               alt="Photograph"
                               style={{ width: "50px", height: "50px", borderRadius: "5px", objectFit: "cover" }}
                             />
@@ -763,8 +782,8 @@ const FacultyView = () => {
                           <button
                             style={viewButtonStyles.viewButton}
                             onClick={() => handleViewDetails(row)}
-                            onMouseOver={(e) => e.target.style.backgroundColor = viewButtonStyles.viewButtonHover.backgroundColor}
-                            onMouseOut={(e) => e.target.style.backgroundColor = viewButtonStyles.viewButton.backgroundColor}
+                            onMouseOver={(e) => (e.target.style.backgroundColor = viewButtonStyles.viewButtonHover.backgroundColor)}
+                            onMouseOut={(e) => (e.target.style.backgroundColor = viewButtonStyles.viewButton.backgroundColor)}
                           >
                             View
                           </button>
@@ -800,5 +819,6 @@ const FacultyView = () => {
     </>
   );
 };
+
 
 export default FacultyView;

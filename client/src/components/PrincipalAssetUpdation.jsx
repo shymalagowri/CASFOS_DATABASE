@@ -5,6 +5,8 @@ import Swal from "sweetalert2";
 import "../styles/style.css";
 
 function PrincipalAssetUpdation() {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const [permanentAssets, setPermanentAssets] = useState([]);
   const [consumableAssets, setConsumableAssets] = useState([]);
   const [activeTab, setActiveTab] = useState("permanent");
@@ -23,7 +25,7 @@ function PrincipalAssetUpdation() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
-  const serverBaseUrl = "http://localhost:3001";
+  const serverBaseUrl = `http://${ip}:${port}`;
 
   // Fetch permanent assets
   useEffect(() => {
@@ -271,7 +273,7 @@ function PrincipalAssetUpdation() {
           style={componentStyles.imagePreview}
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = "https://via.placeholder.com/100?text=Image+Not+Available";
+            e.target.src = "http://via.placeholder.com/100?text=Image+Not+Available";
           }}
         />
         <a 
@@ -746,22 +748,22 @@ function PrincipalAssetUpdation() {
     <div className="asset-updation">
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
       <title>CASFOS - Asset Updation</title>
 
       <section id="sidebar">
         <a href="#" className="brand">
-          <span className="text">ADMIN</span>
+          <span className="text">PRINCIPAL</span>
         </a>
         <ul className="side-menu top">
-            <li className="active"><a href={`/principaldashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-            <li ><a href={`/principalassetupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Updation</span></a></li>
+            <li ><a href={`/principaldashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
+            <li className="active"><a href={`/principalassetupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Updation</span></a></li>
             <li><a href={`/principalassetview?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset View</span></a></li>
             <li><a href={`/principalfacultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Faculty Updation</span></a></li>
             <li><a href={`/principalfacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
           </ul>
         <ul className="side-menu">
-          <li><Link to="/" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></Link></li>
+          <li><Link to="/login" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></Link></li>
         </ul>
       </section>
 

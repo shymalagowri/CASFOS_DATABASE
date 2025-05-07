@@ -15,7 +15,6 @@ const rejectedUserSchema = new mongoose.Schema({
   role: { 
     type: String, 
     required: [true, "Please Enter role"], 
-    enum: ['headofoffice', 'principal', 'assetmanagerentry', 'facultyentrysuper', 'viewer'] 
   },
   dob: { 
     type: Date, 

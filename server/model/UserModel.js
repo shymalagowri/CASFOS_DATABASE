@@ -15,7 +15,7 @@ const temporaryUserSchema = new mongoose.Schema({
   role: { 
     type: String, 
     required: [true, "Please Enter role"], 
-    enum: ['headofoffice', 'principal', 'assetmanagerentry', 'facultyentrysuper', 'viewer'],
+    enum: ['headofoffice', 'principal', 'assetmanager', 'storekeeper', 'facultyentrystaff', 'facultyverifier', 'viewer'],
     default: 'viewer' 
   },
   dob: { 

@@ -6,47 +6,26 @@ import Swal from "sweetalert2";
 import "../styles/style.css";
 
 function Approval() {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const [registrations, setRegistrations] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
-  console.log(username);
+
   useEffect(() => {
-    const checkUserRole = async () => {
-      try {
-        const response = await axios.post('http://localhost:3001/api/users/checkUser', {
-          name: username,
-          role: 'headofoffice'
-        });
-        if (!response.data.exists) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Access Denied',
-            text: 'Only Head of Office can approve registrations',
-          }).then(() => {
-            navigate('/'); // Redirect to login if not Head of Office
-          });
-        } else {
-          fetchRegistrations();
-        }
-      } catch (error) {
-        console.error('Error checking user role', error);
-        navigate('/');
-      }
-    };
+   
 
     const fetchRegistrations = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/users/registrations');
-        console.log(response.data);
+        const response = await axios.get(`http://${ip}:${port}/api/users/registrations`);
         setRegistrations(response.data);
       } catch (error) {
         console.error('Error fetching registrations', error);
       }
     };
-
-    checkUserRole();
+    fetchRegistrations();
   }, [navigate, username]);
 
   const viewDetails = (reg) => {
@@ -63,12 +42,12 @@ function Approval() {
             return `
               <tr>
                 <td style="font-weight:bold; padding:8px; border-bottom: 1px solid #ddd;">${formattedKey}</td>
-                <td style="padding:8px; border-bottom: 1px solid #ddd;">${value}</td>
+                <td style="padding:8px; border-bottom: 1px solid #ddd;">${value || 'N/A'}</td>
               </tr>`;
           })
           .join("")}
       </table>`;
-  
+
     Swal.fire({
       title: "User Details",
       html: detailsHtml,
@@ -78,98 +57,17 @@ function Approval() {
 
   const approveAction = async (id) => {
     const selectedUser = registrations.find(reg => reg._id === id);
-  
-    if (selectedUser.role === 'headofoffice' || selectedUser.role === 'principal') {
-      try {
-        await axios.post(`http://localhost:3001/api/users/approve/${id}`, { access: ['all'] });
-        setRegistrations(registrations.filter(reg => reg._id !== id));
-        Swal.fire('Approved!', 'The user has been approved with full access.', 'success');
-      } catch (error) {
-        console.error('Error approving registration', error);
-        Swal.fire('Error!', 'There was an error approving the user.', 'error');
-      }
-    } else if (selectedUser.role === 'viewer' || selectedUser.role === 'assetmanagerentry' || selectedUser.role === 'facultyentrysuper') {
-      let specificRoleHtml = '';
-      let roleValues = [];
-      
-      if (selectedUser.role === 'assetmanagerentry') {
-        specificRoleHtml = `
-          <label>Select Specific Role:</label><br/>
-          <input type="radio" name="specificRole" id="role0" value="assetmanager" checked /> Asset Manager<br/>
-          <input type="radio" name="specificRole" id="role1" value="assetentrystaff" /> Asset Entry Staff<br/>
-        `;
-        roleValues = ['assetmanager', 'assetentrystaff'];
-      } else if (selectedUser.role === 'facultyentrysuper') {
-        specificRoleHtml = `
-          <label>Select Specific Role:</label><br/>
-          <input type="radio" name="specificRole" id="role0" value="facultyentrystaff" checked /> Faculty Entry Staff<br/>
-          <input type="radio" name="specificRole" id="role1" value="superintendent" /> Superintendent<br/>
-        `;
-        roleValues = ['facultyentrystaff', 'superintendent'];
-      }
 
-      Swal.fire({
-        title: `Approve ${selectedUser.role === 'viewer' ? 'Viewer' : selectedUser.role === 'assetmanagerentry' ? 'Asset Role' : 'Faculty Role'}`,
-        html: `
-          ${specificRoleHtml}
-          <br/><label>ASSET TYPE ACCESS:</label><br/>
-          <input type="checkbox" id="all" /> All <br/>
-          <input type="checkbox" id="it" /> IT <br/>
-          <input type="checkbox" id="store" /> Store <br/>
-          <input type="checkbox" id="electrical" /> Electrical <br/>
-          <input type="checkbox" id="furniture" /> Furniture <br/>
-        `,
-        focusConfirm: false,
-        allowOutsideClick: false,
-        preConfirm: () => {
-          const selectedAssets = [];
-          if (document.getElementById('it').checked) selectedAssets.push('IT');
-          if (document.getElementById('store').checked) selectedAssets.push('Store');
-          if (document.getElementById('electrical').checked) selectedAssets.push('Electrical');
-          if (document.getElementById('furniture').checked) selectedAssets.push('Furniture');
-          if (document.getElementById('all').checked) {
-            selectedAssets.length = 0;
-            selectedAssets.push('IT', 'Store', 'Electrical', 'Furniture');
-          }
-          
-          let specificRole = selectedUser.role;
-          if (selectedUser.role !== 'viewer') {
-            specificRole = document.querySelector('input[name="specificRole"]:checked').value;
-          }
-          
-          return { specificRole, access: selectedAssets };
-        },
-        didOpen: () => {
-          const allCheckbox = document.getElementById('all');
-          const otherCheckboxes = ['it', 'store', 'electrical', 'furniture'].map(id => document.getElementById(id));
-  
-          allCheckbox.addEventListener('change', () => {
-            otherCheckboxes.forEach(checkbox => checkbox.disabled = allCheckbox.checked);
-          });
-  
-          otherCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => {
-              const anyChecked = otherCheckboxes.some(chk => chk.checked);
-              allCheckbox.disabled = anyChecked;
-              if (checkbox.checked) allCheckbox.checked = false;
-            });
-          });
-        }
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          try {
-            await axios.post(`http://localhost:3001/api/users/approve/${id}`, {
-              specificRole: result.value.specificRole,
-              access: result.value.access
-            });
-            setRegistrations(registrations.filter(reg => reg._id !== id));
-            Swal.fire('Approved!', 'The user has been approved with selected role and access.', 'success');
-          } catch (error) {
-            console.error('Error approving user', error);
-            Swal.fire('Error!', 'There was an error approving the user.', 'error');
-          }
-        }
+    try {
+      await axios.post(`http://${ip}:${port}/api/users/approve/${id}`, {
+        access: selectedUser.role === 'headofoffice' || selectedUser.role === 'principal' ? ['all'] : [],
+        specificRole: selectedUser.role, // Use the role directly from registration data
       });
+      setRegistrations(registrations.filter(reg => reg._id !== id));
+      Swal.fire('Approved!', 'The user has been approved.', 'success');
+    } catch (error) {
+      console.error('Error approving registration', error);
+      Swal.fire('Error!', 'There was an error approving the user.', 'error');
     }
   };
 
@@ -192,7 +90,7 @@ function Approval() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.post(`http://localhost:3001/api/users/reject/${id}`, { remark: result.value });
+          await axios.post(`http://${ip}:${port}/api/users/reject/${id}`, { remark: result.value });
           setRegistrations(registrations.filter(reg => reg._id !== id));
           Swal.fire('Rejected!', 'The registration has been rejected.', 'success');
         } catch (error) {
@@ -207,7 +105,7 @@ function Approval() {
     <div className="user-approval">
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
       <link rel="stylesheet" href="style.css" />
       <title>CASFOS</title>
 
@@ -216,15 +114,21 @@ function Approval() {
           <span className="text">HEAD OF OFFICE</span>
         </a>
         <ul className="side-menu top">
-            <li className="active"><a href={`/headofofficedashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-            <li ><a href={`/hoouserapproval?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">User Approval</span></a></li>
-            <li><a href={`/hoofacultyapproval?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Faculty Approval</span></a></li>
-            <li><a href={`/hoofacultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Faculty Updation</span></a></li>
-            <li><a href={`/hoofacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
-          </ul>
+          <li><a href={`/headofofficedashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
+          <li className="active"><a href={`/hoouserapproval?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">User Approval</span></a></li>
+          <li>
+            <a href={`/hooassetapproval?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-shopping-bag-alt" />
+              <span className="text">Asset Approval</span>
+            </a>
+          </li>
+          <li><a href={`/hoofacultyapproval?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Faculty Approval</span></a></li>
+          <li><a href={`/hoofacultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Faculty Updation</span></a></li>
+          <li><a href={`/hoofacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
+        </ul>
         <ul className="side-menu">
           <li>
-            <a href="/" className="logout">
+            <a href="/login" className="logout">
               <i className="bx bxs-log-out-circle" />
               <span className="text">Logout</span>
             </a>
@@ -235,7 +139,6 @@ function Approval() {
       <section id="content">
         <nav>
           <i className="bx bx-menu" />
-          <span className="head-title">Dashboard</span>
           <form action="#">
             <div className="form-input"></div>
           </form>
@@ -267,8 +170,10 @@ function Approval() {
                   <td>
                     {reg.role === 'headofoffice' ? 'Head of Office' :
                      reg.role === 'principal' ? 'Principal' :
-                     reg.role === 'assetmanagerentry' ? 'Asset Manager/Entry' :
-                     reg.role === 'facultyentrysuper' ? 'Faculty Entry/Super' :
+                     reg.role === 'assetmanager' ? 'Asset Manager' :
+                     reg.role === 'storekeeper' ? 'Storekeeper' :
+                     reg.role === 'facultyentrystaff' ? 'Faculty Entry Staff' :
+                     reg.role === 'facultyverifier' ? 'Faculty Verifier' :
                      'Viewer'}
                   </td>
                   <td>

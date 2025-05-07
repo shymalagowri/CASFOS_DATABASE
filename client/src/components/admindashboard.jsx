@@ -7,6 +7,8 @@ import { Bar, Line } from "react-chartjs-2";
 import "../styles/amctable.css";
 
 const Dashboard = () => {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const [assetData, setAssetData] = useState([]);
   const [internalData, setInternalData] = useState([]);
   const [externalData, setExternalData] = useState([]);
@@ -41,7 +43,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchAMCAssets = async () => {
       try {
-        const response = await axios.get("http://localhost:3001/api/assets/amcmonitor");
+        const response = await axios.get(`http://${ip}:${port}/api/assets/amcmonitor`);
         const assets = response.data;
         const currentDate = new Date();
         const oneMonthLater = new Date();
@@ -64,7 +66,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
-        let url = "http://localhost:3001/api/faculty/sessions";
+        let url = `http://${ip}:${port}/api/faculty/sessions`;
         if (selectedSessionYear !== "All") url += `?year=${selectedSessionYear}`;
         else url += `?year=All`;
         const sessionRes = await axios.get(url);
@@ -83,9 +85,9 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const userRes = await axios.get("http://localhost:3001/api/users/count");
+        const userRes = await axios.get(`http://${ip}:${port}/api/users/count`);
         setUserCounts(userRes.data.data);
-        const assetRes = await axios.get("http://localhost:3001/api/assets/monthly");
+        const assetRes = await axios.get(`http://${ip}:${port}/api/assets/monthly`);
         setLabels(assetRes.data.labels);
         setAssetData(assetRes.data.data);
       } catch (error) {
@@ -98,7 +100,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchFacultyData = async () => {
       try {
-        let url = "http://localhost:3001/api/faculty/monthly";
+        let url = `http://${ip}:${port}/api/faculty/monthly`;
         if (selectedFacultyYear !== "All") url += `?year=${selectedFacultyYear}`;
         else url += `?year=All`;
         const facultyRes = await axios.get(url);
@@ -118,7 +120,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchFilteredData = async () => {
       try {
-        let permanentUrl = "http://localhost:3001/api/assets/purchased-types?assetType=Permanent";
+        let permanentUrl = `http://${ip}:${port}/api/assets/purchased-types?assetType=Permanent`;
         if (selectedLocation !== "All") permanentUrl += `&location=${selectedLocation}`;
         if (selectedYear !== "All") permanentUrl += `&year=${selectedYear}`;
         else permanentUrl += `&year=all`;
@@ -131,7 +133,7 @@ const Dashboard = () => {
           ? [...Array(12)].map((_, i) => (2024 + i).toString())
           : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
 
-        let consumableUrl = "http://localhost:3001/api/assets/store-consumables";
+        let consumableUrl = `http://${ip}:${port}/api/assets/store-consumables`;
         if (selectedYear !== "All") consumableUrl += `?year=${selectedYear}`;
         else consumableUrl += `?year=all`;
 
@@ -153,7 +155,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchIssuedData = async () => {
       try {
-        let issuedPermanentUrl = "http://localhost:3001/api/assets/issued-permanent";
+        let issuedPermanentUrl = `http://${ip}:${port}/api/assets/issued-permanent`;
         if (selectedYear !== "All") issuedPermanentUrl += `?year=${selectedYear}`;
         else issuedPermanentUrl += `?year=all`;
 
@@ -165,7 +167,7 @@ const Dashboard = () => {
           ? [...Array(12)].map((_, i) => (2024 + i).toString())
           : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
 
-        let issuedConsumableUrl = "http://localhost:3001/api/assets/issued-consumable";
+        let issuedConsumableUrl = `http://${ip}:${port}/api/assets/issued-consumable`;
         if (selectedYear !== "All") issuedConsumableUrl += `?year=${selectedYear}`;
         else issuedConsumableUrl += `?year=all`;
 
@@ -312,8 +314,8 @@ const Dashboard = () => {
         <Helmet>
           <meta charSet="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+          <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+          <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
           <link rel="stylesheet" href="style.css" />
           <title>CASFOS</title>
         </Helmet>
@@ -329,7 +331,7 @@ const Dashboard = () => {
             <li><a href={`/adminassetview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Asset View</span></a></li>
             <li><a href={`/adminfacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
           </ul>
-          <ul className="side-menu"><li><a href="/" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></a></li></ul>
+          <ul className="side-menu"><li><a href="/login" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></a></li></ul>
         </section>
 
         <section id="content">
@@ -343,7 +345,7 @@ const Dashboard = () => {
           </nav>
 
           <main>
-            <Helmet><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" /></Helmet>
+            <Helmet><link href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" /></Helmet>
 
             <div style={styles.rowContainer}>
               <div style={styles.userContainer}>

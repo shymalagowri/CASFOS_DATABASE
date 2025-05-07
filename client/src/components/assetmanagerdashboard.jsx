@@ -10,7 +10,8 @@ const AssetManagerDashboard = () => {
   // Notification states
   const [notifications, setNotifications] = useState([]);
   const [expandedNotification, setExpandedNotification] = useState(null);
-
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   // Existing dashboard states
   const [assetData, setAssetData] = useState([]);
   const [internalData, setInternalData] = useState([]);
@@ -70,7 +71,7 @@ const AssetManagerDashboard = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get("http://localhost:3001/api/assets/get-asset-notification");
+        const response = await axios.get(`http://${ip}:${port}/api/assets/get-asset-notification`);
         // Sort by actionTime descending (newest first) and limit to 10
         const sortedNotifications = response.data
           .sort((a, b) => new Date(b.actionTime) - new Date(a.actionTime))
@@ -86,7 +87,7 @@ const AssetManagerDashboard = () => {
   // Clear a single notification
   const handleClearNotification = async (id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/assets/delete-asset-notification/${id}`);
+      await axios.delete(`http://${ip}:${port}/api/assets/delete-asset-notification/${id}`);
       setNotifications(notifications.filter((notif) => notif._id !== id));
     } catch (error) {
       console.error("Error clearing notification:", error);
@@ -96,7 +97,7 @@ const AssetManagerDashboard = () => {
   // Clear all notifications
   const handleClearAll = async () => {
     try {
-      await axios.delete("http://localhost:3001/api/assets/delete-asset-notification/all");
+      await axios.delete(`http://${ip}:${port}/api/assets/delete-asset-notification/all`);
       setNotifications([]);
     } catch (error) {
       console.error("Error clearing all notifications:", error);
@@ -135,7 +136,7 @@ const AssetManagerDashboard = () => {
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
-        let url = "http://localhost:3001/api/faculty/sessions";
+        let url = `http://${ip}:${port}/api/faculty/sessions`;
         if (selectedSessionYear !== "All") url += `?year=${selectedSessionYear}`;
         else url += `?year=All`;
         const sessionRes = await axios.get(url);
@@ -154,9 +155,9 @@ const AssetManagerDashboard = () => {
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const userRes = await axios.get("http://localhost:3001/api/users/count");
+        const userRes = await axios.get(`http://${ip}:${port}/api/users/count`);
         setUserCounts(userRes.data.data);
-        const assetRes = await axios.get("http://localhost:3001/api/assets/monthly");
+        const assetRes = await axios.get(`http://${ip}:${port}/api/assets/monthly`);
         setLabels(assetRes.data.labels);
         setAssetData(assetRes.data.data);
       } catch (error) {
@@ -169,7 +170,7 @@ const AssetManagerDashboard = () => {
   useEffect(() => {
     const fetchFacultyData = async () => {
       try {
-        let url = "http://localhost:3001/api/faculty/monthly";
+        let url = `http://${ip}:${port}/api/faculty/monthly`;
         if (selectedFacultyYear !== "All") url += `?year=${selectedFacultyYear}`;
         else url += `?year=All`;
         const facultyRes = await axios.get(url);
@@ -190,7 +191,7 @@ const AssetManagerDashboard = () => {
     const fetchFilteredData = async () => {
       try {
         // Permanent assets
-        let permanentUrl = "http://localhost:3001/api/assets/purchased-types?assetType=Permanent";
+        let permanentUrl = `http://${ip}:${port}/api/assets/purchased-types?assetType=Permanent`;
         if (selectedLocation !== "All") permanentUrl += `&location=${selectedLocation}`;
         if (selectedYear !== "All") permanentUrl += `&year=${selectedYear}`;
         else permanentUrl += `&year=all`;
@@ -204,7 +205,7 @@ const AssetManagerDashboard = () => {
           : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
 
         // Consumable assets
-        let consumableUrl = "http://localhost:3001/api/assets/store-consumables";
+        let consumableUrl = `http://${ip}:${port}/api/assets/store-consumables`;
         if (selectedYear !== "All") consumableUrl += `?year=${selectedYear}`;
         else consumableUrl += `?year=all`;
 
@@ -217,7 +218,7 @@ const AssetManagerDashboard = () => {
           : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
 
         // Issued Permanent assets
-        let issuedPermanentUrl = "http://localhost:3001/api/assets/issued-permanent";
+        let issuedPermanentUrl = `http://${ip}:${port}/api/assets/issued-permanent`;
         if (selectedYear !== "All") issuedPermanentUrl += `?year=${selectedYear}`;
         else issuedPermanentUrl += `?year=all`;
 
@@ -230,7 +231,7 @@ const AssetManagerDashboard = () => {
           : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
 
         // Issued Consumable assets
-        let issuedConsumableUrl = "http://localhost:3001/api/assets/issued-consumable";
+        let issuedConsumableUrl = `http://${ip}:${port}/api/assets/issued-consumable`;
         if (selectedYear !== "All") issuedConsumableUrl += `?year=${selectedYear}`;
         else issuedConsumableUrl += `?year=all`;
 
@@ -379,15 +380,15 @@ const AssetManagerDashboard = () => {
         <Helmet>
           <meta charSet="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+          <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+          <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
           <link rel="stylesheet" href="style.css" />
           <title>CASFOS</title>
         </Helmet>
 
         <section id="sidebar">
           <a href="#" className="brand">
-            <span className="text">DATA ENTRY STAFF</span>
+            <span className="text">ASSET MANAGER</span>
           </a>
           <ul className="side-menu top">
             <li className="active"><a href={`/assetmanagerdashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
@@ -396,7 +397,7 @@ const AssetManagerDashboard = () => {
             <li><a href={`/managerassetview?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Asset View</span></a></li>
           </ul>
           <ul className="side-menu">
-            <li><a href="/" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></a></li>
+            <li><a href="/login" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></a></li>
           </ul>
         </section>
 
@@ -411,200 +412,157 @@ const AssetManagerDashboard = () => {
           </div>
           </nav>
 
-          <main>
-            <Helmet>
-              <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
-            </Helmet>
-
-            {/* Notification Panel */}
-            <div style={styles.notificationPanel}>
-              <div style={styles.notificationHeader}>
-                <h2>Recent Notifications</h2>
-                {notifications.length > 0 && (
-                  <button style={styles.clearAllButton} onClick={handleClearAll}>
-                    Clear All
-                  </button>
-                )}
-              </div>
-              {notifications.length === 0 ? (
-                <p style={styles.noNotifications}>No notifications available</p>
-              ) : (
-                <div style={styles.notificationList}>
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification._id}
-                      style={{
-                        ...styles.notificationBanner,
-                        backgroundColor: notification.action.includes("approved") ? "#d4edda" : "#f8d7da",
-                      }}
-                    >
-                      <div style={styles.notificationSummary}>
-                        <span style={styles.notificationTitle}>
-                          {formatNotificationTitle(notification)}
-                          <span style={styles.notificationTime}>
-                            {new Date(notification.actionTime).toLocaleString()}
-                          </span>
-                        </span>
-                        <div>
-                          <button
-                            style={styles.expandButton}
-                            onClick={() => toggleExpand(notification._id)}
-                          >
-                            {expandedNotification === notification._id ? "▲" : "▼"}
-                          </button>
-                          <button
-                            style={styles.clearButton}
-                            onClick={() => handleClearNotification(notification._id)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
-                      {expandedNotification === notification._id && renderNotificationDetails(notification)}
-                    </div>
-                  ))}
-                </div>
-              )}
+          <main className="main-content">
+          {/* Hero Section */}
+          <section className="hero-section">
+            <div className="hero-overlay" />
+            <div className="hero-content">
+              <br></br>
+              <br></br>
+              <p>Central Academy for State Forest Service - Asset Management System</p>
+           
             </div>
-
-            <div style={styles.container}>
-              <div style={styles.header}>
-                <h2>Total Registered Users</h2>
+          </section>
+          <section id="about" className="content-section">
+            <div className="section-container">
+              <h2 className="section-title">About Us</h2>
+              <div className="about-content">
+                <div className="about-text">
+                  <p>
+                    The Central Academy for State Forest Service, Coimbatore (erstwhile State Forest Service College) is a premier institution under the Directorate of Forest Education, Ministry of Environment, Forests, and Climate Change. It imparts professional training to newly recruited Range Forest Officers (RFOs) and in-service training to State Forest Service Officers at ACF and DCF ranks.
+                  </p>
+                  <p>
+                    Established on January 25, 1980, the Academy was created to meet the growing demand for trained forest officers, spurred by Social Forestry Projects during the IV and V Five-Year Plans. Previously, officers were trained at the Indian Forest College, Dehradun, and Burnihat. CASFOS Coimbatore continues to uphold excellence in forestry education.
+                  </p>
+                  <p className="update-info">
+                  </p>
+                </div>
+                <div className="about-image">
+                  <img
+                    src="/images/casfos_vana_vigyan.png"
+                    alt="CASFOS Emblem"
+                    className="section-image"
+                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
+                  />
+                </div>
               </div>
-              <p style={styles.subtitle}>User's Summary</p>
-              <div style={styles.cardContainer}>
-                {salesData.map((item) => (
-                  <div key={item.id} style={{ ...styles.card, backgroundColor: item.bgColor }}>
-                    <div style={{ ...styles.icon, backgroundColor: item.iconColor }}>
-                      <i className={item.iconClass} style={styles.iconStyle}></i>
+            </div>
+          </section>
+
+          {/* History Section */}
+          <section id="history" className="content-section alt-bg">
+            <div className="section-container">
+              <h2 className="section-title">History of the Academy</h2>
+              <div className="history-content">
+                <div className="history-text">
+                  <p>
+                    CASFOS Coimbatore is a cornerstone of forestry education, offering professional training to State Forest Officers (ACF, FRO) and workshops on forest policy, wildlife, and environmental conservation.
+                  </p>
+                  <h3 className="subsection-title">Mandate</h3>
+                  <ul className="mandate-list">
+                    <li>Deliver professional training to prepare officers for forestry challenges.</li>
+                    <li>Enhance management skills through in-service courses.</li>
+                    <li>Conduct workshops on emerging forestry research and technology.</li>
+                    <li>Align forest education with ecological and environmental standards.</li>
+                  </ul>
+                  <h3 className="subsection-title">Genesis of Forest Training</h3>
+                  <p>
+                    Forestry education in India began in 1867, with a forest school established in Dehradun (1878). The Madras Forest College, founded in Coimbatore in 1912, was the second Rangers College, training foresters for South India. Revived in 1945 and renamed the Southern Forest Rangers College (SFRC) in 1955, it trained over 4,000 rangers until 1987. CASFOS Coimbatore was established in 1980 and integrated under IGNFA in 2022.
+                  </p>
+                </div>
+                <div className="history-images">
+                  <img
+                    src="/images/casfos_coimbatore_img4.jpg"
+                    alt="Historical Campus"
+                    className="section-image"
+                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
+                  />
+                  <img
+                    src="/images/casfos_coimbatore_img5.jpg"
+                    alt="Forest Campus"
+                    className="section-image"
+                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
+                  />
+                  <img
+                    src="/images/casfos_coimbatore_img3.jpg"
+                    alt="Training Facility"
+                    className="section-image"
+                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
+                  />
+                </div>
+                <div className="history-text-continued">
+                  <p className="update-info">
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Reach Section */}
+          <section id="reach" className="content-section">
+            <div className="section-container">
+              <h2 className="section-title">How to Reach</h2>
+              <div className="reach-content">
+                <div className="reach-text">
+                  <p>
+                    Located in the scenic Forest Campus, R.S. Puram, Coimbatore, Tamil Nadu, CASFOS is 5 km from Coimbatore Railway Station and 12 km from Coimbatore International Airport.
+                  </p>
+                  <p>
+                    The campus hosts the Tamil Nadu Forest Academy (TNFA), the Institute of Forest Genetics & Tree Breeding (IFGTB), and the renowned GASS Museum, making it a hub for forestry education and research.
+                  </p>
+                </div>
+                <div className="map-container">
+                  <iframe
+                    src="http://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.2649732361087!2d76.93796778831465!3d11.018735325854964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba858dde76380d3%3A0xbe08bb837838e990!2sCentral%20Academy%20for%20State%20Forest%20Service!5e0!3m2!1sen!2sin!4v1744637852810!5m2!1sen!2sin"
+                    width="600"
+                    height="450"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Contact Section */}
+          <section id="contact" className="content-section alt-bg">
+            <div className="section-container">
+              <h2 className="section-title">Contact Us</h2>
+              <div className="contact-content">
+                <div className="contact-card">
+                  <h3 className="contact-heading">
+                    Central Academy for State Forest Service <br />
+                    Directorate of Forest Education <br />
+                    Ministry of Environment, Forest and Climate Change <br />
+                    Government of India
+                  </h3>
+                  <div className="contact-info">
+                    <div className="contact-item">
+                      <i className="bx bx-envelope" />
+                      <p>
+                        <strong>Email:</strong> casfos-coimbatore@gov.in | casfoscbe-trng@gov.in
+                      </p>
                     </div>
-                    <h3>{item.value}</h3>
-                    <p>{item.title}</p>
+                    <div className="contact-item">
+                      <i className="bx bx-phone" />
+                      <p>
+                        <strong>Phone:</strong> 0422-2450313
+                      </p>
+                    </div>
+                    <div className="contact-item">
+                      <i className="bx bx-map" />
+                      <p>
+                        <strong>Address:</strong> Forest Campus, R.S. Puram, Coimbatore - 641002, Tamil Nadu
+                      </p>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
-
-            <div className="analytics-container" style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: "20px", marginTop: "20px" }}>
-              {/* Row 1: Permanent and Consumable Assets */}
-              <div style={moduleStyle}>
-                <h3 style={titleStyle}>Permanent Assets in Store</h3>
-                <div className="filters">
-                  <label style={{ marginTop: "20px" }}>
-                    Year:
-                    <select value={selectedYear} onChange={handleYearChange}>
-                      <option value="All">All</option>
-                      <option value="2023">2023</option>
-                      <option value="2024">2024</option>
-                      <option value="2025">2025</option>
-                    </select>
-                  </label>
-                  <label style={{ marginTop: "20px", marginLeft: "20px" }}>
-                    Location:
-                    <select value={selectedLocation} onChange={handleLocationChange}>
-                      <option value="All">All</option>
-                      <option value="faculty_chamber">Faculty Chamber</option>
-                      <option value="officer_quarters">Officer Quarters</option>
-                      <option value="staff_quarters">Staff Quarters</option>
-                      <option value="corbett_hall">Corbett Hall</option>
-                      <option value="champion_hall">Champion Hall</option>
-                      <option value="gis_lab">GIS Lab</option>
-                      <option value="van_vatika">Van Vatika</option>
-                      <option value="hostel">Hostel</option>
-                      <option value="officers_mess">Officers Mess</option>
-                      <option value="van_sakthi">Van Sakthi</option>
-                      <option value="library">Library</option>
-                      <option value="classroom">Classroom</option>
-                      <option value="office_room">Office Room</option>
-                      <option value="officers_lounge">Officer's Lounge</option>
-                      <option value="gymnasium">Gymnasium</option>
-                    </select>
-                  </label>
-                </div>
-                <Line data={permanentChartConfig()} options={lineChartOptions} />
-              </div>
-
-              <div style={moduleStyle}>
-                <h3 style={titleStyle}>Consumable Assets in Store</h3>
-                <div className="filters">
-                  <label style={{ marginTop: "20px" }}>
-                    Year:
-                    <select value={selectedYear} onChange={handleYearChange}>
-                      <option value="All">All</option>
-                      <option value="2023">2023</option>
-                      <option value="2024">2024</option>
-                      <option value="2025">2025</option>
-                    </select>
-                  </label>
-                </div>
-                <Line data={consumableChartConfig()} options={lineChartOptions} />
-              </div>
-
-              {/* Row 2: Issued Permanent and Issued Consumable Assets */}
-              <div style={moduleStyle}>
-                <h3 style={titleStyle}>Issued Permanent Assets</h3>
-                <div className="filters">
-                  <label style={{ marginTop: "20px" }}>
-                    Year:
-                    <select value={selectedYear} onChange={handleYearChange}>
-                      <option value="All">All</option>
-                      <option value="2023">2023</option>
-                      <option value="2024">2024</option>
-                      <option value="2025">2025</option>
-                    </select>
-                  </label>
-                </div>
-                <Line data={issuedPermanentChartConfig()} options={lineChartOptions} />
-              </div>
-
-              <div style={moduleStyle}>
-                <h3 style={titleStyle}>Issued Consumable Assets</h3>
-                <div className="filters">
-                  <label style={{ marginTop: "20px" }}>
-                    Year:
-                    <select value={selectedYear} onChange={handleYearChange}>
-                      <option value="All">All</option>
-                      <option value="2023">2023</option>
-                      <option value="2024">2024</option>
-                      <option value="2025">2025</option>
-                    </select>
-                  </label>
-                </div>
-                <Line data={issuedConsumableChartConfig()} options={lineChartOptions} />
-              </div>
-
-              {/* Row 3: Faculty and Session Charts */}
-              <div style={moduleStyle}>
-                <h3 style={titleStyle}>Count of Faculties Entered</h3>
-                <div className="filters">
-                  <label style={{ marginTop: "20px" }}>
-                    Year:
-                    <select onChange={handleFacultyYearChange} value={selectedFacultyYear}>
-                      <option value="All">All</option>
-                      <option value="2025">2025</option>
-                      <option value="2026">2026</option>
-                    </select>
-                  </label>
-                </div>
-                <Bar data={generateFacultyChartConfig()} />
-              </div>
-
-              <div style={moduleStyle}>
-                <h3 style={titleStyle}>Total Sessions Handled</h3>
-                <div className="filters">
-                  <label style={{ marginTop: "20px" }}>
-                    Year:
-                    <select onChange={(e) => setSelectedSessionYear(e.target.value)} value={selectedSessionYear}>
-                      <option value="All">All</option>
-                      <option value="2025">2025</option>
-                      <option value="2026">2026</option>
-                    </select>
-                  </label>
-                </div>
-                <Bar data={generateSessionChartConfig()} />
-              </div>
-            </div>
-          </main>
+          </section>
+        </main>
         </section>
       </div>
     </>

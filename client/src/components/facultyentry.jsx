@@ -3,9 +3,12 @@ import { Helmet } from "react-helmet";
 import "../styles/style.css";
 import axios from "axios";
 import "../styles/facultymanagement.css";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const FacultyManagement = () => {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const [facultyType, setFacultyType] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [savingStatus, setSavingStatus] = useState("");
@@ -70,7 +73,7 @@ const FacultyManagement = () => {
       "Computer Application, Remote Sensing and GIS in Forestry",
       "Urban Forestry/Recreation Forestry & Land Scaping",
     ],
-    "Environment": [
+    Environment: [
       "Environmental Laws & Management",
       "Climate Change: Adaptation & Mitigation",
       "Wasteland Management",
@@ -83,13 +86,7 @@ const FacultyManagement = () => {
       "Ecosystem Health",
       "Others",
     ],
-    "Disaster Management": [
-      "Forest Fire Management & Damage assessment",
-      "Cyclone",
-      "Flood",
-      "Desertification",
-      "Others",
-    ],
+    "Disaster Management": ["Forest Fire Management & Damage assessment", "Cyclone", "Flood", "Desertification", "Others"],
     "Human Resource Development": [
       "Time Management",
       "Leadership Management",
@@ -102,14 +99,7 @@ const FacultyManagement = () => {
       "Building competencies for personal Excellence",
       "Others",
     ],
-    "Health and Fitness": [
-      "First Aid",
-      "Counselling",
-      "Physical, mental and Social Health",
-      "Stress Management",
-      "Yoga and Meditation",
-      "Others",
-    ],
+    "Health and Fitness": ["First Aid", "Counselling", "Physical, mental and Social Health", "Stress Management", "Yoga and Meditation", "Others"],
     "Ethics and Public Governance": [
       "Public administration, Public Grievance and Public Finance",
       "Decision Making",
@@ -132,12 +122,7 @@ const FacultyManagement = () => {
       "Cyber Security Laws",
       "Others",
     ],
-    "CCS Rules and Regulation": [
-      "Service Rules and matters",
-      "Conduct Rules",
-      "Disciplinary Proceedings",
-      "Others",
-    ],
+    "CCS Rules and Regulation": ["Service Rules and matters", "Conduct Rules", "Disciplinary Proceedings", "Others"],
     "Media Management": [
       "The Art of Interacting with Print and Electronic Media",
       "Role of Media",
@@ -148,9 +133,67 @@ const FacultyManagement = () => {
     ],
   };
 
+  useEffect(() => {
+    if (location.state && location.state.facultyData) {
+      const rejectedFaculty = location.state.facultyData;
+      setFacultyType(rejectedFaculty.facultyType || "");
+      setFacultyData({
+        ...facultyData,
+        name: rejectedFaculty.name || "",
+        cadre: rejectedFaculty.cadre || "",
+        yearOfAllotment: rejectedFaculty.yearOfAllotment || "",
+        rrSfsDate: rejectedFaculty.rrSfsDate ? new Date(rejectedFaculty.rrSfsDate).toISOString().split("T")[0] : "",
+        dateOfJoining: rejectedFaculty.dateOfJoining ? new Date(rejectedFaculty.dateOfJoining).toISOString().split("T")[0] : "",
+        dateOfRelieve: rejectedFaculty.dateOfRelieve ? new Date(rejectedFaculty.dateOfRelieve).toISOString().split("T")[0] : "",
+        dateOfBirth: rejectedFaculty.dateOfBirth ? new Date(rejectedFaculty.dateOfBirth).toISOString().split("T")[0] : "",
+        mobileNumber: rejectedFaculty.mobileNumber || "",
+        communicationAddress: rejectedFaculty.communicationAddress || "",
+        permanentAddress: rejectedFaculty.permanentAddress || "",
+        email: rejectedFaculty.email || "",
+        photograph: null,
+        presentPlaceOfWorking: rejectedFaculty.presentPlaceOfWorking || "",
+        status: rejectedFaculty.status || "",
+        majorDomains: rejectedFaculty.majorDomains || [],
+        minorDomains: rejectedFaculty.minorDomains || [],
+        areasOfExpertise: rejectedFaculty.areasOfExpertise || "",
+        awardsReceived: rejectedFaculty.awardsReceived || "",
+        inServiceTrainingHandled: rejectedFaculty.inServiceTrainingHandled || "",
+        publications: rejectedFaculty.publications || [],
+        educationDetails: rejectedFaculty.educationDetails || [],
+        coursesHandled: rejectedFaculty.coursesHandled || [],
+        toursAttended: rejectedFaculty.toursAttended || [],
+        examiner: rejectedFaculty.examiner || [],
+        specialSessions: rejectedFaculty.specialSessions || [],
+        institution: rejectedFaculty.institution || "",
+        conduct: rejectedFaculty.conduct || "",
+        modulesHandled: rejectedFaculty.modulesHandled || [],
+        otherResponsibilities: rejectedFaculty.otherResponsibilities || [],
+      });
+
+      if (rejectedFaculty.majorDomains && rejectedFaculty.majorDomains.length > 0) {
+        const newDomainExpertise = rejectedFaculty.majorDomains.map((major) => ({
+          major,
+          minors: rejectedFaculty.minorDomains.filter((minor) => domainOptions[major]?.includes(minor)) || [],
+        }));
+        setDomainExpertise(newDomainExpertise.length > 0 ? newDomainExpertise : [{ major: "", minors: [] }]);
+      }
+
+      if (rejectedFaculty.photograph) {
+        setImagePreview(rejectedFaculty.photograph);
+      }
+    }
+  }, [location.state]);
+
   const handleFacultyTypeChange = (e) => {
     setFacultyType(e.target.value);
-    setFacultyData({ ...facultyData, institution: "", majorDomains: [], minorDomains: [], status: "", conduct: "" });
+    setFacultyData({
+      ...facultyData,
+      institution: "",
+      majorDomains: [],
+      minorDomains: [],
+      status: "",
+      conduct: "",
+    });
     setDomainExpertise([{ major: "", minors: [] }]);
     autoSaveFacultyData();
   };
@@ -187,9 +230,7 @@ const FacultyManagement = () => {
     if (checked) {
       updatedExpertise[index].minors = [...updatedExpertise[index].minors, subDomain];
     } else {
-      updatedExpertise[index].minors = updatedExpertise[index].minors.filter(
-        (d) => d !== subDomain
-      );
+      updatedExpertise[index].minors = updatedExpertise[index].minors.filter((d) => d !== subDomain);
     }
     setDomainExpertise(updatedExpertise);
     updateFacultyData(updatedExpertise);
@@ -219,17 +260,12 @@ const FacultyManagement = () => {
   const handleAddResponsibility = () => {
     setFacultyData({
       ...facultyData,
-      otherResponsibilities: [
-        ...(facultyData.otherResponsibilities || []),
-        { responsibility: "" },
-      ],
+      otherResponsibilities: [...(facultyData.otherResponsibilities || []), { responsibility: "" }],
     });
   };
 
   const handleRemoveResponsibility = (index) => {
-    const updatedResponsibilities = (facultyData.otherResponsibilities || []).filter(
-      (_, i) => i !== index
-    );
+    const updatedResponsibilities = (facultyData.otherResponsibilities || []).filter((_, i) => i !== index);
     setFacultyData({ ...facultyData, otherResponsibilities: updatedResponsibilities });
   };
 
@@ -293,28 +329,136 @@ const FacultyManagement = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 500 * 1024) {
+        Swal.fire({
+          icon: "error",
+          title: "File Size Error",
+          text: "Photograph must be less than 500KB.",
+        });
+        return;
+      }
       setFacultyData({ ...facultyData, photograph: file });
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
   };
 
-  const handleSubmit = async (e) => {
-    setIsSaved(true);
-    e.preventDefault();
+  const validateForm = () => {
+    const errors = [];
+
+    // Required fields
     if (!facultyType) {
-      alert("Please select a faculty type.");
+      errors.push("Faculty Type is required.");
+    }
+    if (!facultyData.name.trim()) {
+      errors.push("Name is required.");
+    } else if (facultyData.name.length > 100) {
+      errors.push("Name must be under 100 characters.");
+    }
+    if (!facultyData.mobileNumber) {
+      errors.push("Mobile Number is required.");
+    } else if (!/^\d{10}$/.test(facultyData.mobileNumber)) {
+      errors.push("Mobile Number must be exactly 10 digits.");
+    }
+    if (!facultyData.email) {
+      errors.push("Email Address is required.");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(facultyData.email)) {
+      errors.push("Please enter a valid Email Address (e.g., example@domain.com).");
+    }
+
+    // Optional fields - only validate if provided
+    if (facultyData.yearOfAllotment && !/^\d{4}$/.test(facultyData.yearOfAllotment)) {
+      errors.push("Year of Allotment must be a valid 4-digit year (e.g., 2020).");
+    }
+
+    if (facultyData.cadre && !facultyData.cadre.trim()) {
+      errors.push("Cadre cannot be empty if provided.");
+    }
+
+    if ((facultyType === "external" || facultyType === "contract") && facultyData.institution && !facultyData.institution.trim()) {
+      errors.push("Institution Name cannot be empty if provided.");
+    }
+
+    facultyData.educationDetails.forEach((edu, index) => {
+      if (edu.degree.trim()) {
+        if (!edu.specialization.trim()) {
+          errors.push(`Education ${index + 1}: Specialization is required if Degree is provided.`);
+        }
+        if (!edu.institutionName.trim()) {
+          errors.push(`Education ${index + 1}: Institution Name is required if Degree is provided.`);
+        }
+      }
+    });
+
+    facultyData.publications.forEach((pub, index) => {
+      if (pub.typeOfPublication) {
+        if (!pub.title.trim()) {
+          errors.push(`Publication ${index + 1}: Title is required if Type of Publication is selected.`);
+        }
+        if (!pub.dateOfPublication) {
+          errors.push(`Publication ${index + 1}: Date of Publication is required if Type of Publication is selected.`);
+        }
+      }
+    });
+
+    facultyData.coursesHandled.forEach((course, index) => {
+      if (course.courseType) {
+        if (!course.batchno) {
+          errors.push(`Course ${index + 1}: Batch Number is required if Course Type is selected.`);
+        }
+        if (!course.title.trim()) {
+          errors.push(`Course ${index + 1}: Title is required if Course Type is selected.`);
+        }
+      }
+      if (course.feedbackRating && (course.feedbackRating < 1 || course.feedbackRating > 10)) {
+        errors.push(`Course ${index + 1}: Feedback Rating must be between 1 and 10.`);
+      }
+    });
+
+    facultyData.modulesHandled.forEach((module, index) => {
+      if (module && !module.trim()) {
+        errors.push(`Module ${index + 1}: Module name cannot be empty if provided.`);
+      }
+    });
+
+    facultyData.otherResponsibilities.forEach((resp, index) => {
+      if (resp.responsibility && !resp.responsibility.trim()) {
+        errors.push(`Responsibility ${index + 1}: Responsibility cannot be empty if provided.`);
+      }
+    });
+
+    return errors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaved(true);
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Errors",
+        html: `<ul style="text-align: left;">${errors.map((err) => `<li>${err}</li>`).join("")}</ul>`,
+        confirmButtonText: "OK",
+      });
+      setIsSaved(false);
       return;
     }
+
     const updatedFacultyData = { ...facultyData, facultyType };
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/faculty/save",
+        `http://${ip}:${port}/api/faculty/save`,
         updatedFacultyData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
       if (response.data.success) {
-        alert("Faculty data saved successfully!");
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Faculty data saved successfully!",
+        });
         setFacultyData({
           name: "",
           cadre: "",
@@ -350,20 +494,31 @@ const FacultyManagement = () => {
         setFacultyType("");
         setImagePreview(null);
       } else {
-        alert("Failed to save faculty data.");
+        Swal.fire({
+          icon: "error",
+          title: "Failed to Save",
+          text: response.data.message || "Failed to save faculty data. Please try again.",
+        });
       }
     } catch (error) {
       console.error("Error saving faculty data:", error);
-      alert("An error occurred while saving the data.");
+      const errorMessage = error.response?.data?.message || 
+        error.message === "Network Error" ? "Unable to connect to the server. Please check your network connection." :
+        "An unexpected error occurred while saving the data.";
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage,
+      });
     }
+    setIsSaved(false);
   };
 
   const autoSaveFacultyData = async () => {
     if (!facultyType || isSaved) return;
     setSavingStatus("Saving...");
     try {
-      console.log("Autosave payload:", { staffid, facultyType, facultyData });
-      const response = await axios.post("http://localhost:3001/api/faculty/autoSaveFaculty", {
+      const response = await axios.post(`http://${ip}:${port}/api/faculty/autoSaveFaculty`, {
         staffid,
         facultyType,
         facultyData,
@@ -371,68 +526,59 @@ const FacultyManagement = () => {
       setSavingStatus("Draft Saved");
     } catch (error) {
       console.error("Auto-save error:", error);
-      setSavingStatus("Failed to Save");
+      const errorMessage = error.response?.data?.message || "Failed to auto-save draft.";
+      setSavingStatus(errorMessage);
     }
   };
+
   useEffect(() => {
     const fetchAutoSavedFacultyData = async () => {
+      if (location.state && location.state.facultyData) return;
       try {
-        const response = await axios.get("http://localhost:3001/api/faculty/getAutoSavedFaculty", {
+        const response = await axios.get(`http://${ip}:${port}/api/faculty/getAutoSavedFaculty`, {
           params: { staffid },
         });
-        console.log("Fetched response:", response.data);
-    
         if (response.data.success) {
           const fetchedData = response.data.data || {};
-          console.log("Fetched facultyData:", fetchedData);
-    
           setFacultyType(fetchedData.facultyType || "");
-          setFacultyData((prev) => {
-            const updatedData = {
-              ...prev,
-              name: fetchedData.name || '',
-              cadre: fetchedData.cadre || '',
-              yearOfAllotment: fetchedData.yearOfAllotment || '',
-              rrSfsDate: fetchedData.rrSfsDate || null,
-              dateOfJoining: fetchedData.dateOfJoining || null,
-              dateOfRelieve: fetchedData.dateOfRelieve || null,
-              dateOfBirth: fetchedData.dateOfBirth || null,
-              mobileNumber: fetchedData.mobileNumber || '',
-              communicationAddress: fetchedData.communicationAddress || '',
-              permanentAddress: fetchedData.permanentAddress || '',
-              email: fetchedData.email || '',
-              photograph: fetchedData.photograph || null,
-              presentPlaceOfWorking: fetchedData.presentPlaceOfWorking || '',
-              status: fetchedData.status || 'serving',
-              conduct: fetchedData.conduct || '',
-              modulesHandled: fetchedData.modulesHandled || [],
-              majorDomains: fetchedData.majorDomains || [],
-              minorDomains: fetchedData.minorDomains || [],
-              areasOfExpertise: fetchedData.areasOfExpertise || '',
-              awardsReceived: fetchedData.awardsReceived || '',
-              inServiceTrainingHandled: fetchedData.inServiceTrainingHandled || '',
-              publications: fetchedData.publications || [],
-              educationDetails: fetchedData.educationDetails || [],
-              coursesHandled: fetchedData.coursesHandled || [],
-              toursAttended: fetchedData.toursAttended || [],
-              examiner: fetchedData.examiner || [],
-              specialSessions: fetchedData.specialSessions || [],
-              institution: fetchedData.institution || '',
-              otherResponsibilities: fetchedData.otherResponsibilities || [],
-              joined: fetchedData.joined || null,
-            };
-            console.log("Updated facultyData:", updatedData);
-            return updatedData;
-          });
-    
+          setFacultyData((prev) => ({
+            ...prev,
+            name: fetchedData.name || "",
+            cadre: fetchedData.cadre || "",
+            yearOfAllotment: fetchedData.yearOfAllotment || "",
+            rrSfsDate: fetchedData.rrSfsDate ? new Date(fetchedData.rrSfsDate).toISOString().split("T")[0] : "",
+            dateOfJoining: fetchedData.dateOfJoining ? new Date(fetchedData.dateOfJoining).toISOString().split("T")[0] : "",
+            dateOfRelieve: fetchedData.dateOfRelieve ? new Date(fetchedData.dateOfRelieve).toISOString().split("T")[0] : "",
+            dateOfBirth: fetchedData.dateOfBirth ? new Date(fetchedData.dateOfBirth).toISOString().split("T")[0] : "",
+            mobileNumber: fetchedData.mobileNumber || "",
+            communicationAddress: fetchedData.communicationAddress || "",
+            permanentAddress: fetchedData.permanentAddress || "",
+            email: fetchedData.email || "",
+            photograph: fetchedData.photograph || null,
+            presentPlaceOfWorking: fetchedData.presentPlaceOfWorking || "",
+            status: fetchedData.status || "",
+            conduct: fetchedData.conduct || "",
+            modulesHandled: fetchedData.modulesHandled || [],
+            majorDomains: fetchedData.majorDomains || [],
+            minorDomains: fetchedData.minorDomains || [],
+            areasOfExpertise: fetchedData.areasOfExpertise || "",
+            awardsReceived: fetchedData.awardsReceived || "",
+            inServiceTrainingHandled: fetchedData.inServiceTrainingHandled || "",
+            publications: fetchedData.publications || [],
+            educationDetails: fetchedData.educationDetails || [],
+            coursesHandled: fetchedData.coursesHandled || [],
+            toursAttended: fetchedData.toursAttended || [],
+            examiner: fetchedData.examiner || [],
+            specialSessions: fetchedData.specialSessions || [],
+            institution: fetchedData.institution || "",
+            otherResponsibilities: fetchedData.otherResponsibilities || [],
+          }));
+
           if (fetchedData.majorDomains && fetchedData.majorDomains.length > 0) {
             const newDomainExpertise = fetchedData.majorDomains.map((major) => ({
               major,
-              minors: fetchedData.minorDomains?.filter((minor) =>
-                domainOptions[major]?.includes(minor)
-              ) || [],
+              minors: fetchedData.minorDomains?.filter((minor) => domainOptions[major]?.includes(minor)) || [],
             }));
-            console.log("Updated domainExpertise:", newDomainExpertise);
             setDomainExpertise(newDomainExpertise);
           }
         }
@@ -458,25 +604,41 @@ const FacultyManagement = () => {
 
   return (
     <>
-      <div>
+      <Helmet>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+        <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="style.css" />
         <title>CASFOS</title>
+      </Helmet>
+      <div>
         <section id="sidebar">
           <a href="#" className="brand">
-            <span className="text">DATA ENTRY STAFF</span>
+            <span className="text">FACULTY ENTRY STAFF</span>
           </a>
           <ul className="side-menu top">
-            <li className="active"><a href={`/facultyentrydashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-            <li><a href={`/facultyentry?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty Entry</span></a></li>
-            <li><a href={`/viewfaculty?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
+            <li>
+              <a href={`/facultyentrystaffdashboard?username=${encodeURIComponent(username)}`}>
+                <i className="bx bxs-dashboard" />
+                <span className="text">Home</span>
+              </a>
+            </li>
+            <li className="active">
+              <a href={`/facultyentry?username=${encodeURIComponent(username)}`}>
+                <i className="bx bxs-doughnut-chart" />
+                <span className="text">Faculty Entry</span>
+              </a>
+            </li>
+            <li>
+              <a href={`/viewfaculty?username=${encodeURIComponent(username)}`}>
+                <i className="bx bxs-doughnut-chart" />
+                <span className="text">Faculty View</span>
+              </a>
+            </li>
           </ul>
-
           <ul className="side-menu">
             <li>
-              <a href="/" className="logout">
+              <a href="/login" className="logout">
                 <i className="bx bxs-log-out-circle" />
                 <span className="text">Logout</span>
               </a>
@@ -517,7 +679,7 @@ const FacultyManagement = () => {
                           <span>{savingStatus}</span>
                         </div>
                       )}
-                      {savingStatus === "Failed to Save" && (
+                      {savingStatus && savingStatus !== "Saving..." && savingStatus !== "Draft Saved" && (
                         <div>
                           <i className="bx bx-error-circle" style={styles.errorIcon}></i>
                           <span>{savingStatus}</span>
@@ -528,7 +690,7 @@ const FacultyManagement = () => {
 
                   <form onSubmit={handleSubmit}>
                     <div>
-                      <label htmlFor="facultyType">Faculty Type:</label>
+                      <label htmlFor="facultyType">Faculty Type <span style={{ color: "red" }}>*</span>:</label>
                       <select id="facultyType" value={facultyType} onChange={handleFacultyTypeChange}>
                         <option value="" disabled>Select Faculty Type</option>
                         <option value="internal">Internal Faculty</option>
@@ -540,54 +702,128 @@ const FacultyManagement = () => {
                     {facultyType === "internal" && (
                       <div>
                         <h3>Internal Faculty Details</h3>
-                        <label htmlFor="name">Name:</label>
-                        <input type="text" id="name" name="name" placeholder="Name" value={facultyData.name} onChange={handleInputChange} required />
+                        <label htmlFor="name">Name <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="text"
+                          id="name"
+                          name="name"
+                          placeholder="Name"
+                          value={facultyData.name}
+                          onChange={handleInputChange}
+                          maxLength="100"
+                        />
+                        <div style={{ fontSize: "12px", color: "#555" }}>
+                          {facultyData.name.length}/100 characters
+                        </div>
                         <label htmlFor="cadre">Cadre:</label>
-                        <input type="text" id="cadre" name="cadre" placeholder="Cadre" value={facultyData.cadre} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          id="cadre"
+                          name="cadre"
+                          placeholder="Cadre"
+                          value={facultyData.cadre}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="yearOfAllotment">Year of Allotment:</label>
-                        <input type="text" id="yearOfAllotment" name="yearOfAllotment" placeholder="Year of Allotment" value={facultyData.yearOfAllotment} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          id="yearOfAllotment"
+                          name="yearOfAllotment"
+                          placeholder="Year of Allotment"
+                          value={facultyData.yearOfAllotment}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="rrSfsDate">RR/SFS Date:</label>
-                        <input type="date" id="rrSfsDate" name="rrSfsDate" value={facultyData.rrSfsDate} onChange={handleInputChange} />
+                        <input
+                          type="date"
+                          id="rrSfsDate"
+                          name="rrSfsDate"
+                          value={facultyData.rrSfsDate}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="dateOfJoining">Date of Joining:</label>
-                        <input type="date" id="dateOfJoining" name="dateOfJoining" value={facultyData.dateOfJoining} onChange={handleInputChange} />
+                        <input
+                          type="date"
+                          id="dateOfJoining"
+                          name="dateOfJoining"
+                          value={facultyData.dateOfJoining}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="dateOfRelieve">Date of Relieving:</label>
-                        <input type="date" id="dateOfRelieve" name="dateOfRelieve" value={facultyData.dateOfRelieve} onChange={handleInputChange} />
+                        <input
+                          type="date"
+                          id="dateOfRelieve"
+                          name="dateOfRelieve"
+                          value={facultyData.dateOfRelieve}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="dateOfBirth">Date of Birth:</label>
-                        <input type="date" id="dateOfBirth" name="dateOfBirth" value={facultyData.dateOfBirth} onChange={handleInputChange} />
-                        <label htmlFor="mobileNumber">Mobile Number:</label>
-                        <input type="text" id="mobileNumber" name="mobileNumber" placeholder="Mobile Number" value={facultyData.mobileNumber} onChange={handleInputChange} />
+                        <input
+                          type="date"
+                          id="dateOfBirth"
+                          name="dateOfBirth"
+                          value={facultyData.dateOfBirth}
+                          onChange={handleInputChange}
+                        />
+                        <label htmlFor="mobileNumber">Mobile Number <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="text"
+                          id="mobileNumber"
+                          name="mobileNumber"
+                          placeholder="Mobile Number"
+                          value={facultyData.mobileNumber}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="communicationAddress">Communication Address:</label>
-                        <input type="text" id="communicationAddress" name="communicationAddress" placeholder="Communication Address" value={facultyData.communicationAddress} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          id="communicationAddress"
+                          name="communicationAddress"
+                          placeholder="Communication Address"
+                          value={facultyData.communicationAddress}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="permanentAddress">Permanent Address:</label>
-                        <input type="text" id="permanentAddress" name="permanentAddress" placeholder="Permanent Address" value={facultyData.permanentAddress} onChange={handleInputChange} />
-                        <label htmlFor="email">Email Address:</label>
-                        <input type="email" id="email" name="email" placeholder="Email Address" value={facultyData.email} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          id="permanentAddress"
+                          name="permanentAddress"
+                          placeholder="Permanent Address"
+                          value={facultyData.permanentAddress}
+                          onChange={handleInputChange}
+                        />
+                        <label htmlFor="email">Email Address <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          placeholder="Email Address"
+                          value={facultyData.email}
+                          onChange={handleInputChange}
+                        />
                         <div>
                           <label htmlFor="photograph">Photograph (less than 50KB):</label>
-                          <input 
-                            type="file" 
-                            id="photograph" 
-                            name="photograph" 
-                            accept="image/*" 
-                            onChange={handleFileChange} 
+                          <input
+                            type="file"
+                            id="photograph"
+                            name="photograph"
+                            accept="image/*"
+                            onChange={handleFileChange}
                           />
                           {imagePreview && (
-                            <div style={{ marginTop: '10px' }}>
-                              <img 
-                                src={imagePreview} 
-                                alt="Preview" 
-                                style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'contain' }} 
+                            <div style={{ marginTop: "10px" }}>
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                style={{ maxWidth: "100px", maxHeight: "100px", objectFit: "contain" }}
                               />
                             </div>
                           )}
                         </div>
-                        <label htmlFor="conduct">Conduct:</label>
-                        <input type="text" name="conduct" placeholder="Conduct" value={facultyData.conduct} onChange={handleInputChange} />
-
                         <label htmlFor="status">Status:</label>
                         <select name="status" value={facultyData.status} onChange={handleInputChange}>
                           <option value="" disabled>Select Status</option>
-                          <option value="retired">Repartrated</option>
+                          <option value="retired">Repatriated</option>
                           <option value="serving">Serving</option>
                         </select>
 
@@ -632,9 +868,7 @@ const FacultyManagement = () => {
                                       id={`minor-${index}-${subDomain}`}
                                       value={subDomain}
                                       checked={expertise.minors.includes(subDomain)}
-                                      onChange={(e) =>
-                                        handleMinorDomainChange(index, subDomain, e.target.checked)
-                                      }
+                                      onChange={(e) => handleMinorDomainChange(index, subDomain, e.target.checked)}
                                     />
                                     <label htmlFor={`minor-${index}-${subDomain}`}>{subDomain}</label>
                                   </div>
@@ -652,52 +886,63 @@ const FacultyManagement = () => {
                             )}
                           </div>
                         ))}
-                        <button
-                          type="button"
-                          onClick={handleAddDomainExpertise}
-                          style={{ marginTop: "10px" }}
-                        >
+                        <button type="button" onClick={handleAddDomainExpertise} style={{ marginTop: "10px" }}>
                           <i className="bx bx-plus" /> Add Domain Expertise
                         </button>
 
                         <label htmlFor="areasOfExpertise">Areas of Expertise:</label>
-                        <input type="text" name="areasOfExpertise" placeholder="Areas of Expertise" value={facultyData.areasOfExpertise} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="areasOfExpertise"
+                          placeholder="Areas of Expertise"
+                          value={facultyData.areasOfExpertise}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="awardsReceived">Awards Received:</label>
-                        <input type="text" name="awardsReceived" placeholder="Awards Received" value={facultyData.awardsReceived} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="awardsReceived"
+                          placeholder="Awards Received"
+                          value={facultyData.awardsReceived}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="inServiceTrainingHandled">In-Service Training Handled:</label>
-                        <input type="text" name="inServiceTrainingHandled" placeholder="In-Service Training Handled" value={facultyData.inServiceTrainingHandled} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="inServiceTrainingHandled"
+                          placeholder="In-Service Training Handled"
+                          value={facultyData.inServiceTrainingHandled}
+                          onChange={handleInputChange}
+                        />
 
                         <h3>Educational Details</h3>
                         <button type="button" onClick={handleAddEducation}>Add Educational Details</button>
                         {(facultyData.educationDetails || []).map((education, index) => (
                           <div key={index}>
                             <h4>Education {index + 1} Details</h4>
-                            <label htmlFor={`degree-${index}`}>Degree:</label>
+                            <label Server HTMLFor={`degree-${index}`}>Degree:</label>
                             <input
                               type="text"
                               name="degree"
                               placeholder="Degree"
                               value={education.degree}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
-                            <label htmlFor={`specialization-${index}`}>Specialization:</label>
+                            <label Server HTMLFor={`specialization-${index}`}>Specialization:</label>
                             <input
                               type="text"
                               name="specialization"
                               placeholder="Specialization"
                               value={education.specialization}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
-                            <label htmlFor={`institutionName-${index}`}>Institution Name:</label>
+                            <label Server HTMLFor={`institutionName-${index}`}>Institution Name:</label>
                             <input
                               type="text"
                               name="institutionName"
                               placeholder="Institution Name"
                               value={education.institutionName}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <button type="button" onClick={() => handleRemoveEducation(index)}>Remove</button>
                           </div>
@@ -708,21 +953,43 @@ const FacultyManagement = () => {
                         {(facultyData.publications || []).map((publication, index) => (
                           <div key={index}>
                             <h4>Publication {index + 1} Details</h4>
-                            <select name="typeOfPublication" value={publication.typeOfPublication} onChange={(e) => handleInputChange(e, "publications", index)} required>
+                            <select
+                              name="typeOfPublication"
+                              value={publication.typeOfPublication}
+                              onChange={(e) => handleInputChange(e, "publications", index)}
+                            >
                               <option value="" disabled>Select Type of Publication</option>
                               <option value="Books Published">Books Published</option>
                               <option value="Articles Published">Articles Published</option>
                               <option value="Manuals">Manuals</option>
                               <option value="Others">Others</option>
                             </select>
-                            <label htmlFor="title">Title of Publication:</label>
-                            <input type="text" name="title" placeholder="Title" value={publication.title} onChange={(e) => handleInputChange(e, "publications", index)} required />
-                            <label htmlFor="dateOfPublication">Date of Publication:</label>
-                            <input type="date" name="dateOfPublication" value={publication.dateOfPublication} onChange={(e) => handleInputChange(e, "publications", index)} required />
+                            <label Server HTMLFor="title">Title of Publication:</label>
+                            <input
+                              type="text"
+                              name="title"
+                              placeholder="Title"
+                              value={publication.title}
+                              onChange={(e) => handleInputChange(e, "publications", index)}
+                            />
+                            <label Server HTMLFor="dateOfPublication">Date of Publication:</label>
+                            <input
+                              type="date"
+                              name="dateOfPublication"
+                              value={publication.dateOfPublication}
+                              onChange={(e) => handleInputChange(e, "publications", index)}
+                            />
                             {publication.typeOfPublication === "Others" && (
                               <div>
-                                <label htmlFor={`additionalDetails-${index}`}>Additional Details:</label>
-                                <input type="text" id={`additionalDetails-${index}`} name="additionalDetails" placeholder="Additional Details" value={publication.additionalDetails} onChange={(e) => handleInputChange(e, "publications", index)} required />
+                                <label Server HTMLFor={`additionalDetails-${index}`}>Additional Details:</label>
+                                <input
+                                  type="text"
+                                  id={`additionalDetails-${index}`}
+                                  name="additionalDetails"
+                                  placeholder="Additional Details"
+                                  value={publication.additionalDetails}
+                                  onChange={(e) => handleInputChange(e, "publications", index)}
+                                />
                               </div>
                             )}
                             <button type="button" onClick={() => handleRemovePublication(index)}>Remove</button>
@@ -734,8 +1001,12 @@ const FacultyManagement = () => {
                         {(facultyData.coursesHandled || []).map((course, index) => (
                           <div key={index}>
                             <h4>Course {index + 1} Details</h4>
-                            <label htmlFor="courseType">Course Type:</label>
-                            <select name="courseType" value={course.courseType} onChange={(e) => handleInputChange(e, "coursesHandled", index)}>
+                            <label Server HTMLFor="courseType">Course Type:</label>
+                            <select
+                              name="courseType"
+                              value={course.courseType}
+                              onChange={(e) => handleInputChange(e, "coursesHandled", index)}
+                            >
                               <option value="">Select Course Type</option>
                               <option value="InductionTraining">Induction Training</option>
                               <option value="InserviceTraining">In-Service Training</option>
@@ -747,7 +1018,7 @@ const FacultyManagement = () => {
                             </select>
                             {course.courseType === "Others" && (
                               <div>
-                                <label htmlFor={`otherCourseType-${index}`}>Specify Other Course Type:</label>
+                                <label Server HTMLFor={`otherCourseType-${index}`}>Specify Other Course Type:</label>
                                 <input
                                   type="text"
                                   name="otherCourseType"
@@ -757,14 +1028,36 @@ const FacultyManagement = () => {
                                 />
                               </div>
                             )}
-                            <label htmlFor="batchno">Batch Number:</label>
-                            <input type="number" name="batchno" placeholder="Batch No" value={course.batchno} onChange={(e) => handleInputChange(e, "coursesHandled", index)} required />
-                            <label htmlFor="title">Title of the Course:</label>
-                            <input type="text" name="title" placeholder="Title of the Course" value={course.title} onChange={(e) => handleInputChange(e, "coursesHandled", index)} required />
-                            <label htmlFor="feedbackRating">Feedback Rating:</label>
-                            <input type="number" name="feedbackRating" placeholder="Feedback Rating (1-10)" value={course.feedbackRating} onChange={(e) => handleInputChange(e, "coursesHandled", index)} />
-                            <label htmlFor="feedbackRatings">Ordinal Ratings:</label>
-                            <select name="feedbackRatings" value={course.feedbackRatings} onChange={(e) => handleInputChange(e, "coursesHandled", index)}>
+                            <label Server HTMLFor="batchno">Batch Number:</label>
+                            <input
+                              type="number"
+                              name="batchno"
+                              placeholder="Batch No"
+                              value={course.batchno}
+                              onChange={(e) => handleInputChange(e, "coursesHandled", index)}
+                            />
+                            <label Server HTMLFor="title">Title of the Course:</label>
+                            <input
+                              type="text"
+                              name="title"
+                              placeholder="Title of the Course"
+                              value={course.title}
+                              onChange={(e) => handleInputChange(e, "coursesHandled", index)}
+                            />
+                            <label Server HTMLFor="feedbackRating">Feedback Rating:</label>
+                            <input
+                              type="number"
+                              name="feedbackRating"
+                              placeholder="Feedback Rating (1-10)"
+                              value={course.feedbackRating}
+                              onChange={(e) => handleInputChange(e, "coursesHandled", index)}
+                            />
+                            <label Server HTMLFor="feedbackRatings">Ordinal Ratings:</label>
+                            <select
+                              name="feedbackRatings"
+                              value={course.feedbackRatings}
+                              onChange={(e) => handleInputChange(e, "coursesHandled", index)}
+                            >
                               <option value="" disabled>Select Feedback Rating</option>
                               <option value="poor">Poor</option>
                               <option value="good">Good</option>
@@ -795,8 +1088,14 @@ const FacultyManagement = () => {
                         {(facultyData.otherResponsibilities || []).map((resp, index) => (
                           <div key={index}>
                             <h4>Responsibility {index + 1}</h4>
-                            <label htmlFor={`responsibility-${index}`}>Responsibility:</label>
-                            <input type="text" name="responsibility" placeholder="Enter Responsibility" value={resp.responsibility} onChange={(e) => handleInputChange(e, "otherResponsibilities", index)} />
+                            <label Server HTMLFor={`responsibility-${index}`}>Responsibility:</label>
+                            <input
+                              type="text"
+                              name="responsibility"
+                              placeholder="Enter Responsibility"
+                              value={resp.responsibility}
+                              onChange={(e) => handleInputChange(e, "otherResponsibilities", index)}
+                            />
                             <button type="button" onClick={() => handleRemoveResponsibility(index)}>Remove</button>
                           </div>
                         ))}
@@ -806,35 +1105,81 @@ const FacultyManagement = () => {
                     {facultyType === "external" && (
                       <div>
                         <h3>External Faculty Details</h3>
-                        <label htmlFor="name">Name:</label>
-                        <input type="text" name="name" placeholder="Name of the Officer" value={facultyData.name} onChange={handleInputChange} required />
+                        <label htmlFor="name">Name <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="text"
+                          name="name"
+                          placeholder="Name of the Officer"
+                          value={facultyData.name}
+                          onChange={handleInputChange}
+                          maxLength="100"
+                        />
+                        <div style={{ fontSize: "12px", color: "#555" }}>
+                          {facultyData.name.length}/100 characters
+                        </div>
                         <label htmlFor="cadre">Cadre:</label>
-                        <input type="text" name="cadre" placeholder="Cadre" value={facultyData.cadre} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="cadre"
+                          placeholder="Cadre"
+                          value={facultyData.cadre}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="yearOfAllotment">Year of Allotment:</label>
-                        <input type="text" name="yearOfAllotment" placeholder="Year of Allotment" value={facultyData.yearOfAllotment} onChange={handleInputChange} />
-                        <label htmlFor="mobileNumber">Mobile Number:</label>
-                        <input type="text" name="mobileNumber" placeholder="Mobile Number" value={facultyData.mobileNumber} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="yearOfAllotment"
+                          placeholder="Year of Allotment"
+                          value={facultyData.yearOfAllotment}
+                          onChange={handleInputChange}
+                        />
+                        <label htmlFor="mobileNumber">Mobile Number <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="text"
+                          name="mobileNumber"
+                          placeholder="Mobile Number"
+                          value={facultyData.mobileNumber}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="communicationAddress">Communication Address:</label>
-                        <input type="text" name="communicationAddress" placeholder="Communication Address" value={facultyData.communicationAddress} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="communicationAddress"
+                          placeholder="Communication Address"
+                          value={facultyData.communicationAddress}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="permanentAddress">Permanent Address:</label>
-                        <input type="text" name="permanentAddress" placeholder="Permanent Address" value={facultyData.permanentAddress} onChange={handleInputChange} />
-                        <label htmlFor="email">Email Address:</label>
-                        <input type="email" name="email" placeholder="Email ID" value={facultyData.email} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="permanentAddress"
+                          placeholder="Permanent Address"
+                          value={facultyData.permanentAddress}
+                          onChange={handleInputChange}
+                        />
+                        <label htmlFor="email">Email Address <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="email"
+                          name="email"
+                          placeholder="Email ID"
+                          value={facultyData.email}
+                          onChange={handleInputChange}
+                        />
                         <div>
                           <label htmlFor="photograph">Photograph (less than 50KB):</label>
-                          <input 
-                            type="file" 
-                            id="photograph" 
-                            name="photograph" 
-                            accept="image/*" 
-                            onChange={handleFileChange} 
+                          <input
+                            type="file"
+                            id="photograph"
+                            name="photograph"
+                            accept="image/*"
+                            onChange={handleFileChange}
                           />
                           {imagePreview && (
-                            <div style={{ marginTop: '10px' }}>
-                              <img 
-                                src={imagePreview} 
-                                alt="Preview" 
-                                style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'contain' }} 
+                            <div style={{ marginTop: "10px" }}>
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                style={{ maxWidth: "100px", maxHeight: "100px", objectFit: "contain" }}
                               />
                             </div>
                           )}
@@ -843,7 +1188,7 @@ const FacultyManagement = () => {
                         <label htmlFor="status">Status:</label>
                         <select name="status" value={facultyData.status} onChange={handleInputChange}>
                           <option value="" disabled>Select Status</option>
-                          <option value="retired">Repartrated</option>
+                          <option value="retired">Repatriated</option>
                           <option value="serving">Serving</option>
                         </select>
 
@@ -862,9 +1207,13 @@ const FacultyManagement = () => {
                         )}
 
                         <label htmlFor="institution">Name of the Institution:</label>
-                        <input type="text" name="institution" placeholder="Institution (College/University)" value={facultyData.institution} onChange={handleInputChange} required />
-                        <label htmlFor="conduct">Conduct:</label>
-                        <input type="text" name="conduct" placeholder="Conduct" value={facultyData.conduct} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="institution"
+                          placeholder="Institution (College/University)"
+                          value={facultyData.institution}
+                          onChange={handleInputChange}
+                        />
 
                         <h3>Domain Expertise</h3>
                         {domainExpertise.map((expertise, index) => (
@@ -893,9 +1242,7 @@ const FacultyManagement = () => {
                                       id={`minor-${index}-${subDomain}`}
                                       value={subDomain}
                                       checked={expertise.minors.includes(subDomain)}
-                                      onChange={(e) =>
-                                        handleMinorDomainChange(index, subDomain, e.target.checked)
-                                      }
+                                      onChange={(e) => handleMinorDomainChange(index, subDomain, e.target.checked)}
                                     />
                                     <label htmlFor={`minor-${index}-${subDomain}`}>{subDomain}</label>
                                   </div>
@@ -913,18 +1260,26 @@ const FacultyManagement = () => {
                             )}
                           </div>
                         ))}
-                        <button
-                          type="button"
-                          onClick={handleAddDomainExpertise}
-                          style={{ marginTop: "10px" }}
-                        >
+                        <button type="button" onClick={handleAddDomainExpertise} style={{ marginTop: "10px" }}>
                           <i className="bx bx-plus" /> Add Domain Expertise
                         </button>
 
                         <label htmlFor="areasOfExpertise">Areas of Expertise:</label>
-                        <input type="text" name="areasOfExpertise" placeholder="Areas of Expertise" value={facultyData.areasOfExpertise} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="areasOfExpertise"
+                          placeholder="Areas of Expertise"
+                          value={facultyData.areasOfExpertise}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="awardsReceived">Awards Received:</label>
-                        <input type="text" name="awardsReceived" placeholder="Awards Received" value={facultyData.awardsReceived} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="awardsReceived"
+                          placeholder="Awards Received"
+                          value={facultyData.awardsReceived}
+                          onChange={handleInputChange}
+                        />
 
                         <h3>Educational Details</h3>
                         <button type="button" onClick={handleAddEducation}>Add Educational Details</button>
@@ -938,7 +1293,6 @@ const FacultyManagement = () => {
                               placeholder="Degree"
                               value={education.degree}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <label htmlFor={`specialization-${index}`}>Specialization:</label>
                             <input
@@ -947,7 +1301,6 @@ const FacultyManagement = () => {
                               placeholder="Specialization"
                               value={education.specialization}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <label htmlFor={`institutionName-${index}`}>Institution Name:</label>
                             <input
@@ -956,7 +1309,6 @@ const FacultyManagement = () => {
                               placeholder="Institution Name"
                               value={education.institutionName}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <button type="button" onClick={() => handleRemoveEducation(index)}>Remove</button>
                           </div>
@@ -983,7 +1335,13 @@ const FacultyManagement = () => {
                           <div key={index}>
                             <h4>Responsibility {index + 1}</h4>
                             <label htmlFor={`responsibility-${index}`}>Responsibility:</label>
-                            <input type="text" name="responsibility" placeholder="Enter Responsibility" value={resp.responsibility} onChange={(e) => handleInputChange(e, "otherResponsibilities", index)} />
+                            <input
+                              type="text"
+                              name="responsibility"
+                              placeholder="Enter Responsibility"
+                              value={resp.responsibility}
+                              onChange={(e) => handleInputChange(e, "otherResponsibilities", index)}
+                            />
                             <button type="button" onClick={() => handleRemoveResponsibility(index)}>Remove</button>
                           </div>
                         ))}
@@ -993,35 +1351,81 @@ const FacultyManagement = () => {
                     {facultyType === "contract" && (
                       <div>
                         <h3>Contract Faculty Details</h3>
-                        <label htmlFor="name">Name:</label>
-                        <input type="text" name="name" placeholder="Name of the Officer" value={facultyData.name} onChange={handleInputChange} required />
+                        <label htmlFor="name">Name <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="text"
+                          name="name"
+                          placeholder="Name of the Officer"
+                          value={facultyData.name}
+                          onChange={handleInputChange}
+                          maxLength="100"
+                        />
+                        <div style={{ fontSize: "12px", color: "#555" }}>
+                          {facultyData.name.length}/100 characters
+                        </div>
                         <label htmlFor="cadre">Cadre:</label>
-                        <input type="text" name="cadre" placeholder="Cadre" value={facultyData.cadre} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="cadre"
+                          placeholder="Cadre"
+                          value={facultyData.cadre}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="yearOfAllotment">Year of Allotment:</label>
-                        <input type="text" name="yearOfAllotment" placeholder="Year of Allotment" value={facultyData.yearOfAllotment} onChange={handleInputChange} />
-                        <label htmlFor="mobileNumber">Mobile Number:</label>
-                        <input type="text" name="mobileNumber" placeholder="Mobile Number" value={facultyData.mobileNumber} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="yearOfAllotment"
+                          placeholder="Year of Allotment"
+                          value={facultyData.yearOfAllotment}
+                          onChange={handleInputChange}
+                        />
+                        <label htmlFor="mobileNumber">Mobile Number <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="text"
+                          name="mobileNumber"
+                          placeholder="Mobile Number"
+                          value={facultyData.mobileNumber}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="communicationAddress">Communication Address:</label>
-                        <input type="text" name="communicationAddress" placeholder="Communication Address" value={facultyData.communicationAddress} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="communicationAddress"
+                          placeholder="Communication Address"
+                          value={facultyData.communicationAddress}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="permanentAddress">Permanent Address:</label>
-                        <input type="text" name="permanentAddress" placeholder="Permanent Address" value={facultyData.permanentAddress} onChange={handleInputChange} />
-                        <label htmlFor="email">Email Address:</label>
-                        <input type="email" name="email" placeholder="Email ID" value={facultyData.email} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="permanentAddress"
+                          placeholder="Permanent Address"
+                          value={facultyData.permanentAddress}
+                          onChange={handleInputChange}
+                        />
+                        <label htmlFor="email">Email Address <span style={{ color: "red" }}>*</span>:</label>
+                        <input
+                          type="email"
+                          name="email"
+                          placeholder="Email ID"
+                          value={facultyData.email}
+                          onChange={handleInputChange}
+                        />
                         <div>
                           <label htmlFor="photograph">Photograph (less than 50KB):</label>
-                          <input 
-                            type="file" 
-                            id="photograph" 
-                            name="photograph" 
-                            accept="image/*" 
-                            onChange={handleFileChange} 
+                          <input
+                            type="file"
+                            id="photograph"
+                            name="photograph"
+                            accept="image/*"
+                            onChange={handleFileChange}
                           />
                           {imagePreview && (
-                            <div style={{ marginTop: '10px' }}>
-                              <img 
-                                src={imagePreview} 
-                                alt="Preview" 
-                                style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'contain' }} 
+                            <div style={{ marginTop: "10px" }}>
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                style={{ maxWidth: "100px", maxHeight: "100px", objectFit: "contain" }}
                               />
                             </div>
                           )}
@@ -1030,7 +1434,7 @@ const FacultyManagement = () => {
                         <label htmlFor="status">Status:</label>
                         <select name="status" value={facultyData.status} onChange={handleInputChange}>
                           <option value="" disabled>Select Status</option>
-                          <option value="retired">Repartrated</option>
+                          <option value="retired">Repatriated</option>
                           <option value="serving">Serving</option>
                         </select>
 
@@ -1049,9 +1453,13 @@ const FacultyManagement = () => {
                         )}
 
                         <label htmlFor="institution">Name of the Institution:</label>
-                        <input type="text" name="institution" placeholder="Institution (College/University)" value={facultyData.institution} onChange={handleInputChange} required />
-                        <label htmlFor="conduct">Conduct:</label>
-                        <input type="text" name="conduct" placeholder="Conduct" value={facultyData.conduct} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="institution"
+                          placeholder="Institution (College/University)"
+                          value={facultyData.institution}
+                          onChange={handleInputChange}
+                        />
 
                         <h3>Domain Expertise</h3>
                         {domainExpertise.map((expertise, index) => (
@@ -1080,9 +1488,7 @@ const FacultyManagement = () => {
                                       id={`minor-${index}-${subDomain}`}
                                       value={subDomain}
                                       checked={expertise.minors.includes(subDomain)}
-                                      onChange={(e) =>
-                                        handleMinorDomainChange(index, subDomain, e.target.checked)
-                                      }
+                                      onChange={(e) => handleMinorDomainChange(index, subDomain, e.target.checked)}
                                     />
                                     <label htmlFor={`minor-${index}-${subDomain}`}>{subDomain}</label>
                                   </div>
@@ -1100,18 +1506,26 @@ const FacultyManagement = () => {
                             )}
                           </div>
                         ))}
-                        <button
-                          type="button"
-                          onClick={handleAddDomainExpertise}
-                          style={{ marginTop: "10px" }}
-                        >
+                        <button type="button" onClick={handleAddDomainExpertise} style={{ marginTop: "10px" }}>
                           <i className="bx bx-plus" /> Add Domain Expertise
                         </button>
 
                         <label htmlFor="areasOfExpertise">Areas of Expertise:</label>
-                        <input type="text" name="areasOfExpertise" placeholder="Areas of Expertise" value={facultyData.areasOfExpertise} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="areasOfExpertise"
+                          placeholder="Areas of Expertise"
+                          value={facultyData.areasOfExpertise}
+                          onChange={handleInputChange}
+                        />
                         <label htmlFor="awardsReceived">Awards Received:</label>
-                        <input type="text" name="awardsReceived" placeholder="Awards Received" value={facultyData.awardsReceived} onChange={handleInputChange} />
+                        <input
+                          type="text"
+                          name="awardsReceived"
+                          placeholder="Awards Received"
+                          value={facultyData.awardsReceived}
+                          onChange={handleInputChange}
+                        />
 
                         <h3>Educational Details</h3>
                         <button type="button" onClick={handleAddEducation}>Add Educational Details</button>
@@ -1125,7 +1539,6 @@ const FacultyManagement = () => {
                               placeholder="Degree"
                               value={education.degree}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <label htmlFor={`specialization-${index}`}>Specialization:</label>
                             <input
@@ -1134,7 +1547,6 @@ const FacultyManagement = () => {
                               placeholder="Specialization"
                               value={education.specialization}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <label htmlFor={`institutionName-${index}`}>Institution Name:</label>
                             <input
@@ -1143,7 +1555,6 @@ const FacultyManagement = () => {
                               placeholder="Institution Name"
                               value={education.institutionName}
                               onChange={(e) => handleInputChange(e, "educationDetails", index)}
-                              required
                             />
                             <button type="button" onClick={() => handleRemoveEducation(index)}>Remove</button>
                           </div>
@@ -1170,14 +1581,22 @@ const FacultyManagement = () => {
                           <div key={index}>
                             <h4>Responsibility {index + 1}</h4>
                             <label htmlFor={`responsibility-${index}`}>Responsibility:</label>
-                            <input type="text" name="responsibility" placeholder="Enter Responsibility" value={resp.responsibility} onChange={(e) => handleInputChange(e, "otherResponsibilities", index)} />
+                            <input
+                              type="text"
+                              name="responsibility"
+                              placeholder="Enter Responsibility"
+                              value={resp.responsibility}
+                              onChange={(e) => handleInputChange(e, "otherResponsibilities", index)}
+                            />
                             <button type="button" onClick={() => handleRemoveResponsibility(index)}>Remove</button>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <button type="submit">Save</button>
+                    <button type="submit" disabled={isSaved}>
+                      {isSaved ? "Saving..." : "Save"}
+                    </button>
                   </form>
                 </div>
               </div>
@@ -1204,61 +1623,7 @@ const styles = {
   usernameContainer: { display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", color: "#555" },
   userIcon: { fontSize: "30px", color: "#007BFF" },
   username: { fontWeight: "bold", fontSize: "18px" },
-  container: {
-    maxWidth: "800px",
-    margin: "20px auto",
-    padding: "20px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    backgroundColor: "#fff",
-  },
-  container2: {
-    maxWidth: "800px",
-    margin: "20px auto",
-    padding: "20px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    backgroundColor: "#fff",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "10px",
-  },
-  subtitle: {
-    color: "#666",
-    fontSize: "14px",
-    marginBottom: "20px",
-  },
-  cardContainer: {
-    display: "flex",
-    gap: "15px",
-  },
-  card: {
-    flex: "1",
-    padding: "15px",
-    borderRadius: "10px",
-    textAlign: "center",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  icon: {
-    width: "50px",
-    height: "50px",
-    borderRadius: "50%",
-    margin: "0 auto 10px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconStyle: {
-    fontSize: "24px",
-    color: "#fff",
-  },
-  change: {
-    color: "#666",
-    fontSize: "12px",
-  },
+  title: { display: "flex", justifyContent: "space-between", alignItems: "center" },
 };
 
 export default FacultyManagement;

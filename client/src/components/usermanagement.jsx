@@ -9,6 +9,8 @@ import { Bar, Line } from "react-chartjs-2";
 import Chart from "chart.js/auto";
 
 const UserManagement = () => {
+    const port = process.env.PORT
+    const ip = process.env.IP
     const [registrations, setRegistrations] = useState([]);
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
@@ -17,7 +19,7 @@ const UserManagement = () => {
     useEffect(() => {
         const fetchRegistrations = async () => {
             try {
-                const response = await axios.get('http://localhost:3001/api/users/confirmedregistrations');
+                const response = await axios.get(`http://${ip}:${port}/api/users/confirmedregistrations`);
                 setRegistrations(response.data);
             } catch (error) {
                 console.error('Error fetching registrations', error);
@@ -118,7 +120,7 @@ const UserManagement = () => {
     const updateUserAccess = async (user, newAccess) => {
         try {
             console.log("axx",newAccess);
-            await axios.put(`http://localhost:3001/api/users/update-access`, {
+            await axios.put(`http://${ip}:${port}/api/users/update-access`, {
                 userId: user._id,
                 role: user.role,
                 newAccess: newAccess
@@ -135,7 +137,7 @@ const UserManagement = () => {
             <div className="user-approval">
                 <meta charSet="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+                <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
                 <link rel="stylesheet" href="style.css" />
                 <title>CASFOS</title>
                 {/* SIDEBAR */}
@@ -189,7 +191,7 @@ const UserManagement = () => {
                     </ul>
                     <ul className="side-menu">
                         <li>
-                            <a href="/" className="logout">
+                            <a href="/login" className="logout">
                                 <i className="bx bxs-log-out-circle" />
                                 <span className="text">Logout</span>
                             </a>
@@ -202,7 +204,6 @@ const UserManagement = () => {
                     {/* NAVBAR */}
                     <nav>
                         <i className="bx bx-menu" />
-                        <span className="head-title">Dashboard</span>
                         <form action="#">
                             <div className="form-input"></div>
                         </form>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react"; // Added useEffect
-import { useLocation, useNavigate } from "react-router-dom"; // Added useNavigate
+import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import "../styles/facultymanagement.css";
 import "../styles/style.css";
 import axios from "axios";
@@ -14,7 +14,7 @@ const formatDate = (isoDate) => {
   return `${year}-${month}-${day}`;
 };
 
-// Domain options (unchanged)
+// Domain options
 const domainOptions = {
   "Forest & Wildlife": [
     "Silviculture",
@@ -116,21 +116,15 @@ const domainOptions = {
 };
 
 function UpdateFacultyEntry() {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const location = useLocation();
-  const navigate = useNavigate(); // Added for navigation
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
   const { facultyData, isUpdate } = location.state || {};
-
-  // Log initial state for debugging
-  useEffect(() => {
-    console.log("location.state:", location.state);
-    console.log("facultyData:", facultyData);
-    console.log("isUpdate:", isUpdate);
-    if (isUpdate && !facultyData?._id) {
-      console.warn("No valid _id found in facultyData for update!");
-    }
-  }, [facultyData, isUpdate]);
+  console.log("location.state:", location.state);
+  console.log("facultyData:", facultyData);
+  console.log("isUpdate:", isUpdate);
 
   // Format dates from backend
   const formattedFacultyData = {
@@ -162,7 +156,7 @@ function UpdateFacultyEntry() {
     })) || [],
   };
 
-  const _id = formattedFacultyData?._id; // Ensure _id is defined
+  const _id = formattedFacultyData._id;
 
   // Initialize state with formatted faculty data
   const [facultyType, setFacultyType] = useState(formattedFacultyData?.facultyType || "");
@@ -198,7 +192,6 @@ function UpdateFacultyEntry() {
     joined: formattedFacultyData?.joined || "",
     staffid: formattedFacultyData?.staffid || "",
   });
-  const [errorMessage, setErrorMessage] = useState(""); // Added for error feedback
 
   // State for domain expertise
   const [domainExpertise, setDomainExpertise] = useState(() => {
@@ -213,7 +206,7 @@ function UpdateFacultyEntry() {
     return [{ major: "", minors: [] }];
   });
 
-  // Handlers for domain expertise (unchanged)
+  // Handlers for domain expertise
   const handleMajorDomainChange = (index, value) => {
     const updatedExpertise = [...domainExpertise];
     updatedExpertise[index] = { major: value, minors: [] };
@@ -254,7 +247,7 @@ function UpdateFacultyEntry() {
     updateFacultyDomains(updatedExpertise);
   };
 
-  // Handlers for adding nested items (unchanged)
+  // Handlers for adding nested items
   const handleAddPublication = () => {
     setFacultyDetails({
       ...facultyDetails,
@@ -339,7 +332,7 @@ function UpdateFacultyEntry() {
     });
   };
 
-  // Handlers for removing nested items (unchanged)
+  // Handlers for removing nested items
   const handleRemovePublication = (index) => {
     setFacultyDetails({
       ...facultyDetails,
@@ -389,7 +382,7 @@ function UpdateFacultyEntry() {
     });
   };
 
-  // Handlers for input changes (unchanged)
+  // Handlers for input changes
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -419,35 +412,29 @@ function UpdateFacultyEntry() {
   const handleFacultyTypeChange = (e) => {
     setFacultyType(e.target.value);
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage("");
-  
     if (!facultyType) {
-      setErrorMessage("Please select a faculty type.");
+      alert("Please select a faculty type.");
       return;
     }
-  
-    if (isUpdate && !_id) {
-      setErrorMessage("Cannot update faculty: No valid ID provided.");
-      console.error("No _id available for update!");
-      return;
-    }
-  
     const updatedFacultyDetails = { ...facultyDetails, facultyType, _id };
-    console.log("Submitting faculty data:", updatedFacultyDetails);
-  
+    console.log("Submitting:", updatedFacultyDetails);
+
     try {
       const formData = new FormData();
-      formData.append("_id", _id); // Explicitly append _id as a string
+
+      // Handle scalar fields and file
       Object.entries(updatedFacultyDetails).forEach(([key, value]) => {
         if (key === "photograph" && value instanceof File) {
           formData.append(key, value);
-        } else if (key !== "_id" && !Array.isArray(value)) {
+        } else if (!Array.isArray(value)) {
           formData.append(key, value || "");
         }
       });
-  
+
+      // Handle array fields
       const arrayFields = [
         "modulesHandled",
         "majorDomains",
@@ -462,31 +449,31 @@ function UpdateFacultyEntry() {
       ];
       arrayFields.forEach((field) => {
         if (updatedFacultyDetails[field].length > 0) {
-          formData.append(field, JSON.stringify(updatedFacultyDetails[field]));
+          if (["modulesHandled", "majorDomains", "minorDomains"].includes(field)) {
+            updatedFacultyDetails[field].forEach((item, index) => {
+              formData.append(`${field}[${index}]`, item);
+            });
+          } else {
+            updatedFacultyDetails[field].forEach((item, index) => {
+              Object.entries(item).forEach(([subKey, subValue]) => {
+                formData.append(`${field}[${index}][${subKey}]`, subValue || "");
+              });
+            });
+          }
         }
       });
-  
-      console.log("FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-  
-      const response = await axios.post("http://localhost:3001/api/faculty/save", formData, {
+
+      const response = await axios.post(`http://${ip}:${port}/api/faculty/save`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-  
-      console.log("Server response:", response.data);
       if (response.data.success) {
         alert("Faculty data updated successfully!");
-        navigate(`/facultyupdation?username=${encodeURIComponent(username)}`);
       } else {
-        setErrorMessage(`Failed to update faculty: ${response.data.message || "Unknown error"}`);
+        alert("Failed to update faculty data.");
       }
     } catch (error) {
-      console.error("Error updating faculty data:", error.response?.data || error.message);
-      setErrorMessage(
-        `Error updating faculty: ${error.response?.data?.message || error.message}`
-      );
+      console.error("Error updating faculty data:", error);
+      alert("An error occurred while updating the data.");
     }
   };
 
@@ -494,7 +481,7 @@ function UpdateFacultyEntry() {
     <div>
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
       <link rel="stylesheet" href="style.css" />
       <title>CASFOS</title>
       <section id="sidebar">
@@ -535,7 +522,7 @@ function UpdateFacultyEntry() {
         </ul>
         <ul className="side-menu">
           <li>
-            <a href="/" className="logout">
+            <a href="/login" className="logout">
               <i className="bx bxs-log-out-circle" />
               <span className="text">Logout</span>
             </a>
@@ -545,7 +532,6 @@ function UpdateFacultyEntry() {
       <section id="content">
         <nav>
           <i className="bx bx-menu" />
-          <span className="head-title">Dashboard</span>
           <form action="#">
             <div className="form-input"></div>
           </form>
@@ -562,26 +548,10 @@ function UpdateFacultyEntry() {
                   <i className="uil uil-tachometer-fast-alt" />
                   <span className="text">Faculty Management</span>
                 </div>
-                {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
                 <form onSubmit={handleSubmit}>
                   <div>
                     <label htmlFor="facultyType">Faculty Type:</label>
-                    {/* Display facultyType as text if updating, otherwise allow selection */}
-                    {isUpdate ? (
-                      <h2>{facultyType} Faculty</h2>
-                    ) : (
-                      <select
-                        id="facultyType"
-                        value={facultyType}
-                        onChange={handleFacultyTypeChange}
-                        required
-                      >
-                        <option value="">Select Faculty Type</option>
-                        <option value="internal">Internal</option>
-                        <option value="external">External</option>
-                        <option value="contract">Contract</option>
-                      </select>
-                    )}
+                    <h2>{facultyType} Faculty</h2>
                   </div>
 
                   {(facultyType === "internal" ||
@@ -1164,11 +1134,7 @@ function UpdateFacultyEntry() {
                     </div>
                   )}
 
-                  {isUpdate && (
-                    <button type="submit" disabled={!_id}>
-                      Update Faculty
-                    </button>
-                  )}
+                  {isUpdate && <button type="submit">Update Faculty</button>}
                 </form>
               </div>
             </div>

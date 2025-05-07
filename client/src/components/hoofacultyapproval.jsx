@@ -3,14 +3,19 @@ import axios from "axios";
 import "../styles/FacultyApproval.css";
 import { useLocation } from "react-router-dom";
 import "../styles/style.css";
+import Swal from "sweetalert2";
 
 function FacultyApproval() {
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
   const [faculties, setFaculties] = useState([]);
   const [popupData, setPopupData] = useState(null);
   const [newUsersCount, setNewUsersCount] = useState(0);
   const [existingUsersCount, setExistingUsersCount] = useState(0);
   const [dataEntriesCount, setDataEntriesCount] = useState(0);
-  const [message, setMessage] = useState(""); // Added for feedback
+  const [approvalStatus, setApprovalStatus] = useState({});
+  const [rejectingFacultyId, setRejectingFacultyId] = useState(null);
+  const [rejectionRemarks, setRejectionRemarks] = useState("");
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -19,18 +24,18 @@ function FacultyApproval() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const newUsersResponse = await axios.get("http://localhost:3001/api/users/temporaryuserscount");
+        const newUsersResponse = await axios.get(`http://${ip}:${port}/api/users/temporaryuserscount`);
         setNewUsersCount(newUsersResponse.data.count);
 
-        const existingUsersResponse = await axios.get("http://localhost:3001/api/users/count");
+        const existingUsersResponse = await axios.get(`http://${ip}:${port}/api/users/count`);
         const totalusers =
           existingUsersResponse.data.data.adminCount +
           existingUsersResponse.data.data.dataEntryCount +
           existingUsersResponse.data.data.viewerCount;
         setExistingUsersCount(totalusers);
 
-        const assetRes = await axios.get("http://localhost:3001/api/assets/monthly");
-        const facultyRes = await axios.get("http://localhost:3001/api/faculty/monthly");
+        const assetRes = await axios.get(`http://${ip}:${port}/api/assets/monthly`);
+        const facultyRes = await axios.get(`http://${ip}:${port}/api/faculty/monthly`);
         const assetCount = assetRes.data.data.reduce((total, item) => total + item, 0);
         const ifacultyCount = facultyRes.data.internal.reduce((total, item) => total + item, 0);
         const efacultyCount = facultyRes.data.external.reduce((total, item) => total + item, 0);
@@ -47,11 +52,10 @@ function FacultyApproval() {
   useEffect(() => {
     const fetchFaculties = async () => {
       try {
-        const response = await axios.get("http://localhost:3001/api/faculty/getAllFaculties");
+        const response = await axios.get(`http://${ip}:${port}/api/faculty/getAllFaculties`);
         setFaculties(response.data);
       } catch (error) {
         console.error("Error fetching faculties:", error);
-        setMessage("Error fetching faculty data.");
       }
     };
     fetchFaculties();
@@ -61,27 +65,118 @@ function FacultyApproval() {
     try {
       const facultyToApprove = faculties.find((faculty) => faculty._id === id);
       if (!facultyToApprove.verified) {
-        setMessage("Faculty must be verified before approval.");
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Faculty must be verified before approval.",
+        });
         return;
       }
 
-      const response = await axios.post(`http://localhost:3001/api/faculty/approve/${id}`);
+      setApprovalStatus((prev) => ({ ...prev, [id]: "Saving..." }));
+
+      const response = await axios.post(`http://${ip}:${port}/api/faculty/approve/${id}`);
       if (response.data.message === "Faculty approved and moved to confirmed successfully") {
         setFaculties(faculties.filter((faculty) => faculty._id !== id));
-        setMessage("Faculty approved successfully!");
+        setApprovalStatus((prev) => ({ ...prev, [id]: "Approved" }));
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Faculty approved successfully!",
+        });
+
+        setTimeout(() => {
+          setApprovalStatus((prev) => ({ ...prev, [id]: "" }));
+        }, 2000);
       } else {
-        setMessage(response.data.message || "Unexpected response from server.");
+        setApprovalStatus((prev) => ({ ...prev, [id]: "Failed to Approve" }));
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: response.data.message || "Unexpected response from server.",
+        });
       }
     } catch (error) {
       console.error("Error approving faculty:", error);
-      setMessage(error.response?.data?.message || "Error approving faculty.");
+      setApprovalStatus((prev) => ({ ...prev, [id]: "Failed to Approve" }));
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.message || "Error approving faculty.",
+      });
+    }
+  };
+
+  const rejectFaculty = async (id) => {
+    setRejectingFacultyId(id);
+    setRejectionRemarks("");
+  };
+
+  const submitRejection = async () => {
+    if (!rejectionRemarks.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Please provide rejection remarks.",
+      });
+      return;
+    }
+
+    try {
+      const facultyToReject = faculties.find((faculty) => faculty._id === rejectingFacultyId);
+      if (!facultyToReject.verified) {
+        Swal.fire({
+          icon: "warning",
+          title: "Validation Error",
+          text: "Faculty must be verified before rejection.",
+        });
+        setRejectingFacultyId(null);
+        return;
+      }
+
+      setApprovalStatus((prev) => ({ ...prev, [rejectingFacultyId]: "Rejecting..." }));
+
+      const response = await axios.post(`http://${ip}:${port}/api/faculty/rejectFacultyApproval/${rejectingFacultyId}`, {
+        rejectionRemarks
+      });
+
+      if (response.data.success) {
+        setFaculties(faculties.filter((faculty) => faculty._id !== rejectingFacultyId));
+        setApprovalStatus((prev) => ({ ...prev, [rejectingFacultyId]: "Rejected" }));
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Faculty rejected successfully!!!",
+        });
+
+        setTimeout(() => {
+          setApprovalStatus((prev) => ({ ...prev, [rejectingFacultyId]: "" }));
+        }, 2000);
+      } else {
+        setApprovalStatus((prev) => ({ ...prev, [rejectingFacultyId]: "Failed to Reject" }));
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: response.data.message || "Unexpected response from server.",
+        });
+      }
+    } catch (error) {
+      console.error("Error rejecting faculty approval:", error);
+      setApprovalStatus((prev) => ({ ...prev, [rejectingFacultyId]: "Failed to Reject" }));
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.message || "Error rejecting faculty approval.",
+      });
+    } finally {
+      setRejectingFacultyId(null);
     }
   };
 
   const renderPopupContent = (data) => {
     const renderValue = (value, key) => {
       if (key === "photograph" && typeof value === "string") {
-        const imageUrl = `http://localhost:3001/uploads/${value.split("\\").pop()}`;
+        const imageUrl = `http://${ip}:${port}/uploads/${value.split("\\").pop()}`;
         return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px" }} />;
       }
       if (Array.isArray(value)) {
@@ -123,16 +218,16 @@ function FacultyApproval() {
     <div className="faculty-approval">
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
       <link rel="stylesheet" href="style.css" />
       <title>CASFOS</title>
 
       <section id="sidebar">
         <a href="#" className="brand">
-          <span className="text">ADMIN</span>
+          <span className="text">HEAD OF OFFICE</span>
         </a>
         <ul className="side-menu top">
-          <li className="active">
+          <li>
             <a href={`/headofofficedashboard?username=${encodeURIComponent(username)}`}>
               <i className="bx bxs-dashboard" />
               <span className="text">Home</span>
@@ -145,6 +240,12 @@ function FacultyApproval() {
             </a>
           </li>
           <li>
+            <a href={`/hooassetapproval?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-shopping-bag-alt" />
+              <span className="text">Asset Approval</span>
+            </a>
+          </li>
+          <li className="active">
             <a href={`/hoofacultyapproval?username=${encodeURIComponent(username)}`}>
               <i className="bx bxs-package" />
               <span className="text">Faculty Approval</span>
@@ -165,7 +266,7 @@ function FacultyApproval() {
         </ul>
         <ul className="side-menu">
           <li>
-            <a href="/" className="logout">
+            <a href="/login" className="logout">
               <i className="bx bxs-log-out-circle" />
               <span className="text">Logout</span>
             </a>
@@ -176,7 +277,7 @@ function FacultyApproval() {
       <section id="content">
         <nav>
           <i className="bx bx-menu" />
-          <span className="head-title">Dashboard</span>
+          
           <form action="#">
             <div className="form-input"></div>
           </form>
@@ -188,7 +289,6 @@ function FacultyApproval() {
 
         <div className="activity">
           <h2 style={styles.title}>New Faculty Approval</h2>
-          {message && <p style={{ color: message.includes("Error") ? "red" : "green", marginLeft: "20px" }}>{message}</p>}
           <div style={styles.container}>
             <table className="advanced-table">
               <thead>
@@ -197,7 +297,7 @@ function FacultyApproval() {
                   <th>Faculty Type</th>
                   <th>Year of Allotment</th>
                   <th>Mobile Number</th>
-                  <th>Verified</th> {/* Added to show verification status */}
+                  <th>Verified</th>
                   <th>View</th>
                   <th>Action</th>
                 </tr>
@@ -218,19 +318,82 @@ function FacultyApproval() {
                         View
                       </button>
                     </td>
-                    <td>
-                      <button
-                        className="approve-button"
-                        onClick={() => approveFaculty(faculty._id)}
-                        disabled={!faculty.verified} // Disable if not verified
-                        style={{
-                          backgroundColor: faculty.verified ? "#28a745" : "#ccc",
-                          cursor: faculty.verified ? "pointer" : "not-allowed",
-                        }}
-                      >
-                        Approve
-                      </button>
-                    </td>
+                    <td style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+  <button
+    className="approve-button"
+    onClick={() => approveFaculty(faculty._id)}
+    disabled={!faculty.verified || approvalStatus[faculty._id] === "Saving..." || approvalStatus[faculty._id] === "Rejecting..."}
+    style={{
+      backgroundColor: faculty.verified ? "#28a745" : "#ccc",
+      cursor: faculty.verified ? "pointer" : "not-allowed",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "5px",
+      padding: "8px 16px", // Ensure consistent padding
+      borderRadius: "5px",
+      border: "none",
+      color: "white",
+    }}
+  >
+    {approvalStatus[faculty._id] === "Saving..." && (
+      <>
+        <i className="bx bx-loader-circle bx-spin" style={styles.loadingIcon}></i>
+        Saving...
+      </>
+    )}
+    {approvalStatus[faculty._id] === "Approved" && (
+      <>
+        <i className="bx bx-check-circle" style={styles.successIcon}></i>
+        Approved
+      </>
+    )}
+    {approvalStatus[faculty._id] === "Failed to Approve" && (
+      <>
+        <i className="bx bx-error-circle" style={styles.errorIcon}></i>
+        Failed
+      </>
+    )}
+    {!approvalStatus[faculty._id] && "Approve"}
+  </button>
+  <button
+    className="reject-button"
+    onClick={() => rejectFaculty(faculty._id)}
+    disabled={!faculty.verified || approvalStatus[faculty._id] === "Saving..." || approvalStatus[faculty._id] === "Rejecting..."}
+    style={{
+      backgroundColor: faculty.verified ? "#dc3545" : "#ccc",
+      cursor: faculty.verified ? "pointer" : "not-allowed",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "5px",
+      padding: "8px 16px", // Ensure consistent padding
+      borderRadius: "5px",
+      border: "none",
+      color: "white",
+    }}
+  >
+    {approvalStatus[faculty._id] === "Rejecting..." && (
+      <>
+        <i className="bx bx-loader-circle bx-spin" style={styles.loadingIcon}></i>
+        Rejecting...
+      </>
+    )}
+    {approvalStatus[faculty._id] === "Rejected" && (
+      <>
+        <i className="bx bx-x-circle" style={styles.errorIcon}></i>
+        Rejected
+      </>
+    )}
+    {approvalStatus[faculty._id] === "Failed to Reject" && (
+      <>
+        <i className="bx bx-error-circle" style={styles.errorIcon}></i>
+        Failed
+      </>
+    )}
+    {!approvalStatus[faculty._id] && "Reject"}
+  </button>
+</td>
                   </tr>
                 ))}
               </tbody>
@@ -253,6 +416,56 @@ function FacultyApproval() {
               <tbody>{renderPopupContent(popupData)}</tbody>
             </table>
             <button onClick={() => setPopupData(null)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {rejectingFacultyId && (
+        <div className="popup">
+          <div className="popup-content">
+            <h3>Rejection Remarks</h3>
+            <textarea
+              value={rejectionRemarks}
+              onChange={(e) => setRejectionRemarks(e.target.value)}
+              placeholder="Enter rejection remarks here..."
+              style={{
+                width: "100%",
+                minHeight: "100px",
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                marginBottom: "15px",
+                resize: "vertical",
+              }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#6c757d",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+                onClick={() => setRejectingFacultyId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+                onClick={submitRejection}
+              >
+                Submit
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -292,6 +505,9 @@ const styles = {
     marginLeft: "20px",
     color: "#333",
   },
+  loadingIcon: { fontSize: "16px", color: "#007BFF" },
+  successIcon: { fontSize: "16px", color: "#28a745" },
+  errorIcon: { fontSize: "16px", color: "#dc3545" },
 };
 
 export default FacultyApproval;

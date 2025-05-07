@@ -1,27 +1,34 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useLocation } from "react-router-dom";
+import axios from "axios"; // http client for API requests
+import { useLocation } from "react-router-dom"; // For accessing URL parameters
 
+// AdminFacultyView component: Allows Head of Office to view faculty records with filters
 const AdminFacultyView = () => {
-  const [facultyType, setFacultyType] = useState("");
-  const [name, setName] = useState("");
-  const [yearOfAllotment, setYearOfAllotment] = useState("");
-  const [email, setEmail] = useState("");
-  const [domainKnowledge, setDomainKnowledge] = useState("");
-  const [areaOfExpertise, setAreaOfExpertise] = useState("");
-  const [institution, setInstitution] = useState("");
-  const [status, setStatus] = useState("");
-  const [modulesHandled, setModulesHandled] = useState("");
-  const [majorDomains, setMajorDomains] = useState([]);
-  const [minorDomains, setMinorDomains] = useState([]);
-  const [mobileNumber, setMobileNumber] = useState("");
-  const [tableData, setTableData] = useState([]);
-  const [message, setMessage] = useState("");
-  const [selectedFaculty, setSelectedFaculty] = useState(null);
-  
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
+  // State definitions for filters and faculty data
+  const [facultyType, setFacultyType] = useState(""); // Faculty type filter
+  const [name, setName] = useState(""); // Name filter
+  const [yearOfAllotment, setYearOfAllotment] = useState(""); // Year of allotment filter
+  const [email, setEmail] = useState(""); // Email filter
+  const [domainKnowledge, setDomainKnowledge] = useState(""); // Domain knowledge filter
+  const [areaOfExpertise, setAreaOfExpertise] = useState(""); // Areas of expertise filter
+  const [institution, setInstitution] = useState(""); // Institution filter
+  const [status, setStatus] = useState(""); // Status filter
+  const [modulesHandled, setModulesHandled] = useState(""); // Modules handled filter
+  const [majorDomains, setMajorDomains] = useState([]); // Major domains filter
+  const [minorDomains, setMinorDomains] = useState([]); // Minor domains filter
+  const [mobileNumber, setMobileNumber] = useState(""); // Mobile number filter
+  const [tableData, setTableData] = useState([]); // Filtered faculty data for table
+  const [message, setMessage] = useState(""); // Message for no records found
+  const [selectedFaculty, setSelectedFaculty] = useState(null); // Faculty selected for detailed view
+
+  // Extract username from URL query parameters
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const username = queryParams.get("username") || "Guest";
+
+  // Domain options for major and minor domains dropdowns
   const domainOptions = {
     "Forest & Wildlife": [
       "Silviculture",
@@ -44,7 +51,7 @@ const AdminFacultyView = () => {
       "Computer Application, Remote Sensing and GIS in Forestry",
       "Urban Forestry/Recreation Forestry & Land Scaping",
     ],
-    "Environment": [
+    Environment: [
       "Environmental Laws & Management",
       "Climate Change: Adaptation & Mitigation",
       "Wasteland Management",
@@ -57,13 +64,7 @@ const AdminFacultyView = () => {
       "Ecosystem Health",
       "Others",
     ],
-    "Disaster Management": [
-      "Forest Fire Management & Damage assessment",
-      "Cyclone",
-      "Flood",
-      "Desertification",
-      "Others",
-    ],
+    "Disaster Management": ["Forest Fire Management & Damage assessment", "Cyclone", "Flood", "Desertification", "Others"],
     "Human Resource Development": [
       "Time Management",
       "Leadership Management",
@@ -76,14 +77,7 @@ const AdminFacultyView = () => {
       "Building competencies for personal Excellence",
       "Others",
     ],
-    "Health and Fitness": [
-      "First Aid",
-      "Counselling",
-      "Physical, mental and Social Health",
-      "Stress Management",
-      "Yoga and Meditation",
-      "Others",
-    ],
+    "Health and Fitness": ["First Aid", "Counselling", "Physical, mental and Social Health", "Stress Management", "Yoga and Meditation", "Others"],
     "Ethics and Public Governance": [
       "Public administration, Public Grievance and Public Finance",
       "Decision Making",
@@ -106,12 +100,7 @@ const AdminFacultyView = () => {
       "Cyber Security Laws",
       "Others",
     ],
-    "CCS Rules and Regulation": [
-      "Service Rules and matters",
-      "Conduct Rules",
-      "Disciplinary Proceedings",
-      "Others",
-    ],
+    "CCS Rules and Regulation": ["Service Rules and matters", "Conduct Rules", "Disciplinary Proceedings", "Others"],
     "Media Management": [
       "The Art of Interacting with Print and Electronic Media",
       "Role of Media",
@@ -121,16 +110,18 @@ const AdminFacultyView = () => {
       "Others",
     ],
   };
+
+  // Fetch filtered faculty data whenever filters change
   useEffect(() => {
     const handleApplyFilter = async () => {
       try {
-        const response = await axios.post("http://localhost:3001/api/faculty/filterFaculties", {
+        const response = await axios.post(`http://${ip}:${port}/api/faculty/filterFaculties`, {
           facultyType,
           name,
           yearOfAllotment,
           email,
           domainKnowledge,
-          areaOfExpertise,
+          areaOfExpertise: areaOfExpertise, // Corrected typo from 'areaOfExpertise' to match state
           institution,
           status,
           modulesHandled: modulesHandled ? [modulesHandled] : undefined,
@@ -149,6 +140,7 @@ const AdminFacultyView = () => {
       } catch (error) {
         setTableData([]);
         setMessage("No matching records.");
+        console.error("Error fetching filtered faculty:", error);
       }
     };
     handleApplyFilter();
@@ -164,55 +156,55 @@ const AdminFacultyView = () => {
     areaOfExpertise,
     institution,
     mobileNumber,
-    domainKnowledge
+    domainKnowledge,
   ]);
 
-  const renderPopupContent = (data) => {
-    const renderValue = (value, key) => {
-      if (key === "photograph" && typeof value === "string") {
-        const imageUrl = `http://localhost:3001/uploads/${value.split("\\").pop()}`;
-        return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "5px" }} />;
-      }
-  
-      if (Array.isArray(value)) {
-        return (
-          <ul>
-            {value.map((item, index) => (
-              <li key={index}>{renderValue(item, key)}</li>
+ // Render faculty details in popup
+const renderPopupContent = (data) => {
+  const renderValue = (value, key) => {
+    if (key === "photograph" && typeof value === "string") {
+      const imageUrl = `http://${ip}:${port}/uploads/${value.split("\\").pop()}`;
+      return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "5px" }} />;
+    }
+    if (Array.isArray(value)) {
+      return (
+        <ul>
+          {value.map((item, index) => (
+            <li key={index}>{renderValue(item, key)}</li>
+          ))}
+        </ul>
+      );
+    }
+    if (typeof value === "object" && value !== null) {
+      return (
+        <ul>
+          {Object.entries(value)
+            .filter(([subKey]) => subKey !== "_id")
+            .map(([subKey, val]) => (
+              <li key={subKey}>
+                <strong>{subKey.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}:</strong>{" "}
+                {renderValue(val, subKey)}
+              </li>
             ))}
-          </ul>
-        );
-      }
-  
-      if (typeof value === "object" && value !== null) {
-        return (
-          <ul>
-            {Object.entries(value)
-              .filter(([key]) => key !== "_id")
-              .map(([key, val]) => (
-                <li key={key}>
-                  <strong>{key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}:</strong> {renderValue(val, key)}
-                </li>
-              ))}
-          </ul>
-        );
-      }
-  
-      return value?.toString() || "-";
-    };
-  
-    return Object.entries(data)
-      .filter(([key]) => key !== "_id" && key !== "conduct") // Exclude both "_id" and "conduct"
-      .map(([key, value]) => (
-        <tr key={key}>
-          <td style={{ fontWeight: "bold", padding: "10px", border: "1px solid #ddd" }}>
-            {key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}:
-          </td>
-          <td style={{ padding: "10px", border: "1px solid #ddd" }}>{renderValue(value, key)}</td>
-        </tr>
-      ));
+        </ul>
+      );
+    }
+    return value?.toString() || "-";
   };
 
+  return Object.entries(data)
+    .filter(([key]) => key !== "_id" && key !== "conduct") // Add condition to exclude "conduct"
+    .map(([key, value]) => (
+      <tr key={key}>
+        <td style={{ fontWeight: "bold", padding: "10px", border: "1px solid #ddd" }}>
+          {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}:
+        </td>
+        <td style={{ padding: "10px", border: "1px solid #ddd" }}>{renderValue(value, key)}</td>
+      </tr>
+    ));
+};
+
+  // Clear all filters and reset table
   const handleClearFilter = () => {
     setFacultyType("");
     setName("");
@@ -230,14 +222,17 @@ const AdminFacultyView = () => {
     setMessage("");
   };
 
+  // Open faculty details popup
   const handleViewDetails = (faculty) => {
     setSelectedFaculty(faculty);
   };
 
+  // Close faculty details popup
   const closePopup = () => {
     setSelectedFaculty(null);
   };
 
+  // Inline styles for popups
   const popupStyles = {
     popup: {
       position: "fixed",
@@ -280,6 +275,7 @@ const AdminFacultyView = () => {
     },
   };
 
+  // Inline styles for filter section
   const filterStyles = {
     filterContainer: {
       padding: "20px",
@@ -332,6 +328,7 @@ const AdminFacultyView = () => {
     },
   };
 
+  // Inline styles for view buttons
   const viewButtonStyles = {
     viewButton: {
       padding: "6px 12px",
@@ -347,6 +344,7 @@ const AdminFacultyView = () => {
     },
   };
 
+  // General inline styles
   const styles = {
     usernameContainer: {
       display: "flex",
@@ -463,6 +461,7 @@ const AdminFacultyView = () => {
     },
   };
 
+  // Unused module styles (potentially for future use)
   const moduleStyle2 = {
     width: "60%",
     padding: "10px",
@@ -496,310 +495,370 @@ const AdminFacultyView = () => {
     color: "#28a745",
   };
 
+  // Render the component
   return (
-    <>
-      <div className="asset-view">
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
-        <title>CASFOS</title>
+    <div className="asset-view">
+      {/* Meta tags and stylesheets */}
+      <meta charSet="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+      <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+      <title>CASFOS</title>
 
-        <section id="sidebar">
-          <a href="#" className="brand">
-            <span className="text">ADMIN</span>
-          </a>
-          <ul className="side-menu top">
-            <li className="active"><a href={`/headofofficedashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
-            <li ><a href={`/hoouserapproval?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">User Approval</span></a></li>
-            <li><a href={`/hoofacultyapproval?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Faculty Approval</span></a></li>
-            <li><a href={`/hoofacultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Faculty Updation</span></a></li>
-            <li><a href={`/hoofacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li>
-          </ul>
-          <ul className="side-menu">
-            <li>
-              <a href="/" className="logout">
-                <i className="bx bxs-log-out-circle" />
-                <span className="text">Logout</span>
-              </a>
-            </li>
-          </ul>
-        </section>
+      {/* Sidebar */}
+      <section id="sidebar">
+        <a href="#" className="brand">
+          <span className="text">HEAD OF OFFICE</span>
+        </a>
+        <ul className="side-menu top">
+          <li>
+            <a href={`/headofofficedashboard?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-dashboard" />
+              <span className="text">Home</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/hoouserapproval?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-shopping-bag-alt" />
+              <span className="text">User Approval</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/hooassetapproval?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-shopping-bag-alt" />
+              <span className="text">Asset Approval</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/hoofacultyapproval?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-package" />
+              <span className="text">Faculty Approval</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/hoofacultyupdation?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-reply" />
+              <span className="text">Faculty Updation</span>
+            </a>
+          </li>
+          <li className="active">
+            <a href={`/hoofacultyview?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-doughnut-chart" />
+              <span className="text">Faculty View</span>
+            </a>
+          </li>
+        </ul>
+        <ul className="side-menu">
+          <li>
+            <a href="/login" className="logout">
+              <i className="bx bxs-log-out-circle" />
+              <span className="text">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </section>
 
-        <section id="content">
-          <nav>
-            <i className="bx bx-menu" />
-            <span className="head-title">Dashboard</span>
-            <form action="#">
-              <div className="form-input"></div>
-            </form>
-            <div style={styles.usernameContainer}>
-              <i className="bx bxs-user-circle" style={styles.userIcon}></i>
-              <span style={styles.username}>{username}</span>
-            </div>
-          </nav>
-
-          <main>
-            <div className="dash-content">
-              <div className="title">
-                <span className="text">Faculty View with Filters</span>
-              </div>
-              <div style={filterStyles.filterContainer}>
-                <div style={filterStyles.filterGrid}>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="facultyType">Faculty Type:</label>
-                    <select
-                      id="facultyType"
-                      value={facultyType}
-                      onChange={(e) => setFacultyType(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    >
-                      <option value="">Select</option>
-                      <option value="internal">Internal</option>
-                      <option value="external">External</option>
-                      <option value="contract">Contract</option>
-                    </select>
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="name">Name:</label>
-                    <input
-                      id="name"
-                      placeholder="Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="yearOfAllotment">Year of Allotment:</label>
-                    <input
-                      id="yearOfAllotment"
-                      placeholder="YYYY"
-                      value={yearOfAllotment}
-                      onChange={(e) => setYearOfAllotment(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="email">Email:</label>
-                    <input
-                      id="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="status">Status:</label>
-                    <select
-                      id="status"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    >
-                      <option value="">Select</option>
-                      <option value="serving">Serving</option>
-                      <option value="retired">Retired</option>
-                    </select>
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="modulesHandled">Modules Handled:</label>
-                    <input
-                      id="modulesHandled"
-                      placeholder="Module Name"
-                      value={modulesHandled}
-                      onChange={(e) => setModulesHandled(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-  <label style={filterStyles.label} htmlFor="majorDomains">Major Domains:</label>
-  <select
-    id="majorDomains"
-    value={majorDomains[0] || ""}
-    onChange={(e) => setMajorDomains([e.target.value])}
-    style={filterStyles.input}
-    onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-    onBlur={(e) => e.target.style.borderColor = "#ddd"}
-  >
-    <option value="">Select Major Domain</option>
-    {Object.keys(domainOptions).map((domain) => (
-      <option key={domain} value={domain}>
-        {domain}
-      </option>
-    ))}
-  </select>
-</div>
-<div style={filterStyles.filterItem}>
-  <label style={filterStyles.label} htmlFor="minorDomains">Minor Domains:</label>
-  <select
-    id="minorDomains"
-    value={minorDomains[0] || ""}
-    onChange={(e) => setMinorDomains([e.target.value])}
-    disabled={!majorDomains[0]}
-    style={{
-      ...filterStyles.input,
-      opacity: !majorDomains[0] ? 0.7 : 1,
-      cursor: !majorDomains[0] ? 'not-allowed' : 'pointer'
-    }}
-    onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-    onBlur={(e) => e.target.style.borderColor = "#ddd"}
-  >
-    <option value="">Select Minor Domain</option>
-    {majorDomains[0] &&
-      domainOptions[majorDomains[0]]?.map((subDomain) => (
-        <option key={subDomain} value={subDomain}>
-          {subDomain}
-        </option>
-      ))}
-  </select>
-</div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="areaOfExpertise">Areas of Expertise:</label>
-                    <input
-                      id="areaOfExpertise"
-                      placeholder="Areas of Expertise"
-                      value={areaOfExpertise}
-                      onChange={(e) => setAreaOfExpertise(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="institution">Institution:</label>
-                    <input
-                      id="institution"
-                      placeholder="Institution"
-                      value={institution}
-                      onChange={(e) => setInstitution(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="mobileNumber">Mobile Number:</label>
-                    <input
-                      id="mobileNumber"
-                      placeholder="Mobile Number"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                  <div style={filterStyles.filterItem}>
-                    <label style={filterStyles.label} htmlFor="domainKnowledge">Domain Knowledge:</label>
-                    <input
-                      id="domainKnowledge"
-                      placeholder="Domain Knowledge"
-                      value={domainKnowledge}
-                      onChange={(e) => setDomainKnowledge(e.target.value)}
-                      style={filterStyles.input}
-                      onFocus={(e) => e.target.style.borderColor = filterStyles.inputFocus.borderColor}
-                      onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                  </div>
-                </div>
-                <div style={filterStyles.buttonContainer}>
-                  <button
-                    style={filterStyles.clearButton}
-                    onClick={handleClearFilter}
-                    onMouseOver={(e) => e.target.style.backgroundColor = filterStyles.clearButtonHover.backgroundColor}
-                    onMouseOut={(e) => e.target.style.backgroundColor = filterStyles.clearButton.backgroundColor}
-                  >
-                    Clear Filter
-                  </button>
-                </div>
-              </div>
-
-              {message && <p style={{ color: "red", marginTop: "1rem" }}>{message}</p>}
-              {tableData.length > 0 && (
-                <table className="faculty-table" style={{ marginTop: "1rem" }}>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Photograph</th>
-                      <th>Faculty Type</th>
-                      <th>Mobile Number</th>
-                      <th>Email</th>
-                      <th>Year of Allotment</th>
-                      <th>View</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableData.map((row, index) => (
-                      <tr key={index}>
-                        <td>{row.name}</td>
-                        <td>
-                          {row.photograph ? (
-                            <img
-                              src={`http://localhost:3001/uploads/${row.photograph.split("\\").pop()}`}
-                              alt="Photograph"
-                              style={{ width: "50px", height: "50px", borderRadius: "5px", objectFit: "cover" }}
-                            />
-                          ) : (
-                            "No Image"
-                          )}
-                        </td>
-                        <td>{row.facultyType}</td>
-                        <td>{row.mobileNumber}</td>
-                        <td>{row.email}</td>
-                        <td>{row.yearOfAllotment}</td>
-                        <td>
-                          <button
-                            style={viewButtonStyles.viewButton}
-                            onClick={() => handleViewDetails(row)}
-                            onMouseOver={(e) => e.target.style.backgroundColor = viewButtonStyles.viewButtonHover.backgroundColor}
-                            onMouseOut={(e) => e.target.style.backgroundColor = viewButtonStyles.viewButton.backgroundColor}
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </main>
-        </section>
-
-        {selectedFaculty && (
-          <div style={popupStyles.popup}>
-            <div style={popupStyles.popupContent}>
-              <h3 style={popupStyles.popupHeader}>Faculty Details</h3>
-              <table style={popupStyles.table}>
-                <tbody>{renderPopupContent(selectedFaculty)}</tbody>
-              </table>
-              <button
-                style={popupStyles.closeButton}
-                onClick={closePopup}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#c82333")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#dc3545")}
-              >
-                Close
-              </button>
-            </div>
+      {/* Main content */}
+      <section id="content">
+        <nav>
+          <i className="bx bx-menu" />
+          <form action="#">
+            <div className="form-input"></div>
+          </form>
+          <div style={styles.usernameContainer}>
+            <i className="bx bxs-user-circle" style={styles.userIcon}></i>
+            <span style={styles.username}>{username}</span>
           </div>
-        )}
-      </div>
-    </>
+        </nav>
+
+        <main>
+          <div className="dash-content">
+            <div className="title">
+              <span className="text">Faculty View with Filters</span>
+            </div>
+            <div style={filterStyles.filterContainer}>
+              <div style={filterStyles.filterGrid}>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="facultyType">
+                    Faculty Type:
+                  </label>
+                  <select
+                    id="facultyType"
+                    value={facultyType}
+                    onChange={(e) => setFacultyType(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  >
+                    <option value="">Select</option>
+                    <option value="internal">Internal</option>
+                    <option value="external">External</option>
+                    <option value="contract">Contract</option>
+                  </select>
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="name">
+                    Name:
+                  </label>
+                  <input
+                    id="name"
+                    placeholder="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="yearOfAllotment">
+                    Year of Allotment:
+                  </label>
+                  <input
+                    id="yearOfAllotment"
+                    placeholder="YYYY"
+                    value={yearOfAllotment}
+                    onChange={(e) => setYearOfAllotment(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="email">
+                    Email:
+                  </label>
+                  <input
+                    id="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="status">
+                    Status:
+                  </label>
+                  <select
+                    id="status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  >
+                    <option value="">Select</option>
+                    <option value="serving">Serving</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="modulesHandled">
+                    Modules Handled:
+                  </label>
+                  <input
+                    id="modulesHandled"
+                    placeholder="Module Name"
+                    value={modulesHandled}
+                    onChange={(e) => setModulesHandled(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="majorDomains">
+                    Major Domains:
+                  </label>
+                  <select
+                    id="majorDomains"
+                    value={majorDomains[0] || ""}
+                    onChange={(e) => setMajorDomains([e.target.value])}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  >
+                    <option value="">Select Major Domain</option>
+                    {Object.keys(domainOptions).map((domain) => (
+                      <option key={domain} value={domain}>
+                        {domain}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="minorDomains">
+                    Minor Domains:
+                  </label>
+                  <select
+                    id="minorDomains"
+                    value={minorDomains[0] || ""}
+                    onChange={(e) => setMinorDomains([e.target.value])}
+                    disabled={!majorDomains[0]}
+                    style={{
+                      ...filterStyles.input,
+                      opacity: !majorDomains[0] ? 0.7 : 1,
+                      cursor: !majorDomains[0] ? "not-allowed" : "pointer",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  >
+                    <option value="">Select Minor Domain</option>
+                    {majorDomains[0] &&
+                      domainOptions[majorDomains[0]]?.map((subDomain) => (
+                        <option key={subDomain} value={subDomain}>
+                          {subDomain}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="areaOfExpertise">
+                    Areas of Expertise:
+                  </label>
+                  <input
+                    id="areaOfExpertise"
+                    placeholder="Areas of Expertise"
+                    value={areaOfExpertise}
+                    onChange={(e) => setAreaOfExpertise(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="institution">
+                    Institution:
+                  </label>
+                  <input
+                    id="institution"
+                    placeholder="Institution"
+                    value={institution}
+                    onChange={(e) => setInstitution(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="mobileNumber">
+                    Mobile Number:
+                  </label>
+                  <input
+                    id="mobileNumber"
+                    placeholder="Mobile Number"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+                <div style={filterStyles.filterItem}>
+                  <label style={filterStyles.label} htmlFor="domainKnowledge">
+                    Domain Knowledge:
+                  </label>
+                  <input
+                    id="domainKnowledge"
+                    placeholder="Domain Knowledge"
+                    value={domainKnowledge}
+                    onChange={(e) => setDomainKnowledge(e.target.value)}
+                    style={filterStyles.input}
+                    onFocus={(e) => (e.target.style.borderColor = filterStyles.inputFocus.borderColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "#ddd")}
+                  />
+                </div>
+              </div>
+              <div style={filterStyles.buttonContainer}>
+                <button
+                  style={filterStyles.clearButton}
+                  onClick={handleClearFilter}
+                  onMouseOver={(e) => (e.target.style.backgroundColor = filterStyles.clearButtonHover.backgroundColor)}
+                  onMouseOut={(e) => (e.target.style.backgroundColor = filterStyles.clearButton.backgroundColor)}
+                >
+                  Clear Filter
+                </button>
+              </div>
+            </div>
+
+            {/* Display message if no records found */}
+            {message && <p style={{ color: "red", marginTop: "1rem" }}>{message}</p>}
+
+            {/* Faculty table */}
+            {tableData.length > 0 && (
+              <table className="faculty-table" style={{ marginTop: "1rem", width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Name</th>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Photograph</th>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Faculty Type</th>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Mobile Number</th>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Email</th>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Year of Allotment</th>
+                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>View</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableData.map((row) => (
+                    <tr key={row._id}>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>{row.name || "-"}</td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>
+                        {row.photograph ? (
+                          <img
+                            src={`http://${ip}:${port}/uploads/${row.photograph.split("\\").pop()}`}
+                            alt="Photograph"
+                            style={{ width: "50px", height: "50px", borderRadius: "5px", objectFit: "cover" }}
+                          />
+                        ) : (
+                          "No Image"
+                        )}
+                      </td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>{row.facultyType || "-"}</td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>{row.mobileNumber || "-"}</td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>{row.email || "-"}</td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>{row.yearOfAllotment || "-"}</td>
+                      <td style={{ padding: "10px", border: "1px solid #ddd" }}>
+                        <button
+                          style={viewButtonStyles.viewButton}
+                          onClick={() => handleViewDetails(row)}
+                          onMouseOver={(e) => (e.target.style.backgroundColor = viewButtonStyles.viewButtonHover.backgroundColor)}
+                          onMouseOut={(e) => (e.target.style.backgroundColor = viewButtonStyles.viewButton.backgroundColor)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </main>
+      </section>
+
+      {/* Faculty Details Popup */}
+      {selectedFaculty && (
+        <div style={popupStyles.popup}>
+          <div style={popupStyles.popupContent}>
+            <h3 style={popupStyles.popupHeader}>Faculty Details</h3>
+            <table style={popupStyles.table}>
+              <tbody>{renderPopupContent(selectedFaculty)}</tbody>
+            </table>
+            <button
+              style={popupStyles.closeButton}
+              onClick={closePopup}
+              onMouseOver={(e) => (e.target.style.backgroundColor = "#c82333")}
+              onMouseOut={(e) => (e.target.style.backgroundColor = "#dc3545")}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
