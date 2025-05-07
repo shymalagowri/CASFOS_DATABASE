@@ -49,3 +49,4 @@ npm start
 - Ensure that both the client and server are running simultaneously for full functionality.
 - Check `.env.example` for required environment variables and create a `.env` file if necessary.
 - If you encounter issues, check logs and ensure required ports are available.
+- Configure the .env files in both server and client
