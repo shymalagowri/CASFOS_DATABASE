@@ -1,6 +1,6 @@
-# React App Setup Guide
+# Comprehensive Database Management System
 
-Follow these steps to set up and run the React application.
+Follow these steps to set up and run the application.
 
 ## Prerequisites
 Make sure you have the following installed on your system:
@@ -11,7 +11,7 @@ Make sure you have the following installed on your system:
 
 ### 1. Clone the Repository
 ```
-git clone <repository-url>
+git clone https://github.com/shymalagowri/CASFOS_DATABASE.git
 ```
 
 ### 2. Navigate to the Client Directory
