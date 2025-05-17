@@ -299,6 +299,9 @@ const FacultyVerifierDashboard = () => {
         <nav>
           <i className="bx bx-menu" />
           <span className="head-title">Dashboard</span>
+          <form action="#">
+            <div className="form-input"></div>
+          </form>
           <div className="nav-right-container">
             <div className="notification-icon-container">
               <i className="fas fa-bell bell-icon" onClick={toggleNotificationPanel} />
