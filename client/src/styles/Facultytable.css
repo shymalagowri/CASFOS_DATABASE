@@ -1,0 +1,111 @@
+/* Advanced styles for the faculty table */
+.faculty-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1.5rem;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  /* Table headers */
+  .faculty-table th {
+    background-color: #007BFF;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 2px solid #0056b3;
+  }
+  
+  /* Table cells */
+  .faculty-table td {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: #333;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+  }
+  
+  /* Hover effect on rows */
+  .faculty-table tr:hover td {
+    background-color: #f1f5f9;
+  }
+  
+  /* Alternating row colors */
+  .faculty-table tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  
+  /* Image styling in table */
+  .faculty-table td img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+    transition: transform 0.3s ease;
+  }
+  
+  .faculty-table td img:hover {
+    transform: scale(1.1);
+  }
+  
+  /* View button styling */
+  .faculty-table td button {
+    padding: 6px 12px;
+    background-color: #28a745;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+  
+  .faculty-table td button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .faculty-table {
+      display: block;
+      overflow-x: auto;
+    }
+  
+    .faculty-table th,
+    .faculty-table td {
+      min-width: 120px;
+    }
+  
+    .faculty-table th {
+      font-size: 0.85rem;
+      padding: 10px;
+    }
+  
+    .faculty-table td {
+      font-size: 0.8rem;
+      padding: 10px;
+    }
+  }
+  
+  /* Sticky header for large datasets */
+  .faculty-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  
+  /* No image placeholder */
+  .faculty-table td:empty::after {
+    content: "No Image";
+    color: #6c757d;
+    font-style: italic;
+  }
