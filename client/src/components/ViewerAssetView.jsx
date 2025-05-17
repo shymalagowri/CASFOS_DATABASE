@@ -1523,7 +1523,6 @@ const AssetView = () => {
           <div className="title">
             <span className="text">Asset View</span>
           </div>
-          //tabs for different views
           <div className="admin-asset-tabs" style={{ marginBottom: "20px" }}>
             <button className={activeTab === "purchase" ? "active" : ""} onClick={() => setActiveTab("purchase")}>
               Purchase
@@ -1541,7 +1540,6 @@ const AssetView = () => {
               Dead Stock Register
             </button>
           </div>
-          //forms for filtering data
           <div className="admin-asset-filter-container">
             {activeTab === "purchase" && (
               <div className="admin-asset-filter-grid">
