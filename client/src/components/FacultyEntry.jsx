@@ -629,7 +629,7 @@ const FacultyManagement = () => {
         <title>CASFOS</title>
       </Helmet>
       <div>
-        //Sidebar and Header
+        {/* Sidebar and Header */}
         <section id="sidebar">
           <a href="#" className="brand">
             <span className="text">FACULTY ENTRY STAFF</span>
@@ -705,7 +705,7 @@ const FacultyManagement = () => {
                       )}
                     </div>
                   </div>
-//all the form fields
+                  {/* Form for Faculty Entry */}
                   <form onSubmit={handleSubmit}>
                     <div>
                       <label htmlFor="facultyType">Faculty Type <span style={{ color: "red" }}>*</span>:</label>
