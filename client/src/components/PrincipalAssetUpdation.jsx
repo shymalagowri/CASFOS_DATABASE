@@ -243,17 +243,17 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
   const renderAssetCard = (asset) => { // Function to render asset card
     const firstItem = asset.items?.[0] || {}; // Get first item or empty object
     return (
-      <div key={asset._id} style={componentStyles.card}> // Card container
-        <div style={componentStyles.cardHeader}> // Card header
-          <h3>{firstItem.itemName || "Unnamed Asset"}</h3> // Display item name or default
-          <span style={componentStyles.assetTypeBadge}>{asset.assetType}</span> // Display asset type
+      <div key={asset._id} style={componentStyles.card}> 
+        <div style={componentStyles.cardHeader}> 
+          <h3>{firstItem.itemName || "Unnamed Asset"}</h3> 
+          <span style={componentStyles.assetTypeBadge}>{asset.assetType}</span> 
         </div>
-        <div style={componentStyles.cardBody}> // Card body
-          <p><strong>Category:</strong> {asset.assetCategory || "N/A"}</p> // Display category
-          <p><strong>Sub Category:</strong> {firstItem.subCategory || "N/A"}</p> // Display sub category
-          <p><strong>Purchase Date:</strong> {new Date(asset.purchaseDate).toLocaleDateString()}</p> // Display purchase date
-          <p><strong>Supplier:</strong> {asset.supplierName}</p> // Display supplier name
-          <p><strong>Bill No:</strong> {asset.billNo}</p> // Display bill number
+        <div style={componentStyles.cardBody}> 
+          <p><strong>Category:</strong> {asset.assetCategory || "N/A"}</p> 
+          <p><strong>Sub Category:</strong> {firstItem.subCategory || "N/A"}</p> 
+          <p><strong>Purchase Date:</strong> {new Date(asset.purchaseDate).toLocaleDateString()}</p> 
+          <p><strong>Supplier:</strong> {asset.supplierName}</p> 
+          <p><strong>Bill No:</strong> {asset.billNo}</p> 
           {asset.assetType === "Permanent" && ( // Conditional rendering for permanent assets
             <p><strong>Item IDs:</strong> {firstItem.itemIds?.join(", ") || "N/A"}</p> // Display item IDs
           )}
@@ -261,7 +261,7 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
             <p><strong>Quantity:</strong> {firstItem.quantityReceived}</p> // Display quantity
           )}
         </div>
-        <div style={componentStyles.cardFooter}> // Card footer
+        <div style={componentStyles.cardFooter}>
           <button 
             style={componentStyles.viewButton} 
             onClick={() => setPopupData(asset)} // Open popup with asset details
@@ -282,7 +282,7 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
   const renderImagePreview = (url) => { // Function to render image preview
     if (!url) return null; // Return null if no URL
     return (
-      <div style={componentStyles.imagePreviewContainer}> // Image preview container
+      <div style={componentStyles.imagePreviewContainer}>
         <img 
           src={url} 
           alt="Preview" 
@@ -308,17 +308,17 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
     if (!asset) return null; // Return null if no asset
     
     return (
-      <div style={componentStyles.assetDetails}> // Asset details container
-        <h3>{asset.assetType} Asset Details</h3> // Asset type title
+      <div style={componentStyles.assetDetails}>
+        <h3>{asset.assetType} Asset Details</h3> 
         
         {editMode ? ( // Edit mode rendering
           <>
             {/* General Asset Information */}
-            <div style={componentStyles.section}> // General information section
-              <h4>General Information</h4> // Section title
-              <div style={componentStyles.formRow}> // Form row
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Asset Type:</label> // Label
+            <div style={componentStyles.section}> 
+              <h4>General Information</h4> 
+              <div style={componentStyles.formRow}>
+                <div style={componentStyles.formGroup}> 
+                  <label>Asset Type:</label> 
                   <input
                     type="text"
                     name="assetType"
@@ -328,8 +328,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                     disabled // Disabled input
                   />
                 </div>
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Asset Category:</label> // Label
+                <div style={componentStyles.formGroup}>
+                  <label>Asset Category:</label> 
                   <input
                     type="text"
                     name="assetCategory"
@@ -340,9 +340,9 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                 </div>
               </div>
 
-              <div style={componentStyles.formRow}> // Form row
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Entry Date:</label> // Label
+              <div style={componentStyles.formRow}> 
+                <div style={componentStyles.formGroup}> 
+                  <label>Entry Date:</label> 
                   <input
                     type="date"
                     name="entryDate"
@@ -351,8 +351,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                     style={componentStyles.input}
                   />
                 </div>
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Purchase Date:</label> // Label
+                <div style={componentStyles.formGroup}> 
+                  <label>Purchase Date:</label> 
                   <input
                     type="date"
                     name="purchaseDate"
@@ -363,38 +363,38 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                 </div>
               </div>
 
-              <div style={componentStyles.formRow}> // Form row
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Source:</label> // Label
+              <div style={componentStyles.formRow}> 
+                <div style={componentStyles.formGroup}> 
+                  <label>Source:</label> 
                   <select
                     name="source"
                     value={editedAsset.source || ""}
                     onChange={handleInputChange}
                     style={componentStyles.input}
                   >
-                    <option value="GEM">GEM</option> // Option
-                    <option value="Local">Local</option> // Option
-                    <option value="Other">Other</option> // Option
+                    <option value="GEM">GEM</option> 
+                    <option value="Local">Local</option> 
+                    <option value="Other">Other</option> 
                   </select>
                 </div>
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Mode of Purchase:</label> // Label
+                <div style={componentStyles.formGroup}> 
+                  <label>Mode of Purchase:</label> 
                   <select
                     name="modeOfPurchase"
                     value={editedAsset.modeOfPurchase || ""}
                     onChange={handleInputChange}
                     style={componentStyles.input}
                   >
-                    <option value="Tender">Tender</option> // Option
-                    <option value="Quotation">Quotation</option> // Option
-                    <option value="Others">Others</option> // Option
+                    <option value="Tender">Tender</option> 
+                    <option value="Quotation">Quotation</option> 
+                    <option value="Others">Others</option> 
                   </select>
                 </div>
               </div>
 
-              <div style={componentStyles.formRow}> // Form row
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Supplier Name:</label> // Label
+              <div style={componentStyles.formRow}> 
+                <div style={componentStyles.formGroup}> 
+                  <label>Supplier Name:</label> 
                   <input
                     type="text"
                     name="supplierName"
@@ -403,8 +403,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                     style={componentStyles.input}
                   />
                 </div>
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Supplier Address:</label> // Label
+                <div style={componentStyles.formGroup}> 
+                  <label>Supplier Address:</label> 
                   <input
                     type="text"
                     name="supplierAddress"
@@ -415,9 +415,9 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                 </div>
               </div>
 
-              <div style={componentStyles.formRow}> // Form row
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Bill No:</label> // Label
+              <div style={componentStyles.formRow}> 
+                <div style={componentStyles.formGroup}> 
+                  <label>Bill No:</label> 
                   <input
                     type="text"
                     name="billNo"
@@ -426,8 +426,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                     style={componentStyles.input}
                   />
                 </div>
-                <div style={componentStyles.formGroup}> // Form group
-                  <label>Received By:</label> // Label
+                <div style={componentStyles.formGroup}> 
+                  <label>Received By:</label> 
                   <input
                     type="text"
                     name="receivedBy"
@@ -438,8 +438,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                 </div>
               </div>
 
-              <div style={componentStyles.formGroup}> // Form group
-                <label>Bill Photo:</label> // Label
+              <div style={componentStyles.formGroup}> 
+                <label>Bill Photo:</label> 
                 <input
                   type="file"
                   onChange={(e) => { // Handle file selection
@@ -449,22 +449,22 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                   }}
                   style={componentStyles.input}
                 />
-                {renderImagePreview(editedAsset.billPhotoUrl)} // Render bill photo preview
+                {renderImagePreview(editedAsset.billPhotoUrl)} 
               </div>
             </div>
 
             {/* Items Section */}
-            <div style={componentStyles.section}> // Items section
-              <h4>Items</h4> // Section title
-              {editedAsset.items?.map((item, index) => ( // Map over items
-                <div key={index} style={componentStyles.itemEditContainer}> // Item container
-                  <div style={componentStyles.itemHeader}> // Item header
-                    <h5>Item {index + 1}</h5> // Item title
+            <div style={componentStyles.section}> 
+              <h4>Items</h4> 
+              {editedAsset.items?.map((item, index) => ( 
+                <div key={index} style={componentStyles.itemEditContainer}> 
+                  <div style={componentStyles.itemHeader}> 
+                    <h5>Item {index + 1}</h5> 
                   </div>
                   
-                  <div style={componentStyles.formRow}> // Form row
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Item Name:</label> // Label
+                  <div style={componentStyles.formRow}> 
+                    <div style={componentStyles.formGroup}> 
+                      <label>Item Name:</label> 
                       <input
                         type="text"
                         value={item.itemName || ""}
@@ -472,8 +472,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                         style={componentStyles.input}
                       />
                     </div>
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Sub Category:</label> // Label
+                    <div style={componentStyles.formGroup}> 
+                      <label>Sub Category:</label> 
                       <input
                         type="text"
                         value={item.subCategory || ""}
@@ -483,8 +483,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                     </div>
                   </div>
 
-                  <div style={componentStyles.formGroup}> // Form group
-                    <label>Item Description:</label> // Label
+                  <div style={componentStyles.formGroup}> 
+                    <label>Item Description:</label> 
                     <textarea
                       value={item.itemDescription || ""}
                       onChange={(e) => handleItemChange(index, "itemDescription", e.target.value)}
@@ -492,9 +492,9 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                     />
                   </div>
 
-                  <div style={componentStyles.formRow}> // Form row
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Quantity Received:</label> // Label
+                  <div style={componentStyles.formRow}> 
+                    <div style={componentStyles.formGroup}> 
+                      <label>Quantity Received:</label> 
                       <input
                         type="number"
                         value={item.quantityReceived || ""}
@@ -502,8 +502,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                         style={componentStyles.input}
                       />
                     </div>
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Unit Price:</label> // Label
+                    <div style={componentStyles.formGroup}> 
+                      <label>Unit Price:</label> 
                       <input
                         type="number"
                         step="0.01"
@@ -512,8 +512,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                         style={componentStyles.input}
                       />
                     </div>
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Total Price:</label> // Label
+                    <div style={componentStyles.formGroup}> 
+                      <label>Total Price:</label> 
                       <input
                         type="number"
                         step="0.01"
@@ -526,11 +526,11 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                   </div>
 
                   {/* AMC Information */}
-                  <div style={componentStyles.subSection}> // AMC section
-                    <h6>AMC Information</h6> // Section title
-                    <div style={componentStyles.formRow}> // Form row
-                      <div style={componentStyles.formGroup}> // Form group
-                        <label>AMC From Date:</label> // Label
+                  <div style={componentStyles.subSection}> 
+                    <h6>AMC Information</h6> 
+                    <div style={componentStyles.formRow}> 
+                      <div style={componentStyles.formGroup}> 
+                        <label>AMC From Date:</label> 
                         <input
                           type="date"
                           value={item.amcFromDate ? new Date(item.amcFromDate).toISOString().split('T')[0] : ""}
@@ -538,8 +538,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                           style={componentStyles.input}
                         />
                       </div>
-                      <div style={componentStyles.formGroup}> // Form group
-                        <label>AMC To Date:</label> // Label
+                      <div style={componentStyles.formGroup}> 
+                        <label>AMC To Date:</label> 
                         <input
                           type="date"
                           value={item.amcToDate ? new Date(item.amcToDate).toISOString().split('T')[0] : ""}
@@ -549,9 +549,9 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                       </div>
                     </div>
 
-                    <div style={componentStyles.formRow}> // Form row
-                      <div style={componentStyles.formGroup}> // Form group
-                        <label>AMC Cost:</label> // Label
+                    <div style={componentStyles.formRow}> 
+                      <div style={componentStyles.formGroup}> 
+                        <label>AMC Cost:</label> 
                         <input
                           type="number"
                           value={item.amcCost || ""}
@@ -559,8 +559,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                           style={componentStyles.input}
                         />
                       </div>
-                      <div style={componentStyles.formGroup}> // Form group
-                        <label>AMC Photo:</label> // Label
+                      <div style={componentStyles.formGroup}> 
+                        <label>AMC Photo:</label> 
                         <input
                           type="file"
                           onChange={(e) => { // Handle file selection
@@ -570,17 +570,17 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                           }}
                           style={componentStyles.input}
                         />
-                        {renderImagePreview(item.amcPhotoUrl)} // Render AMC photo preview
+                        {renderImagePreview(item.amcPhotoUrl)} 
                       </div>
                     </div>
                   </div>
 
                   {/* Warranty Information */}
-                  <div style={componentStyles.subSection}> // Warranty section
-                    <h6>Warranty Information</h6> // Section title
-                    <div style={componentStyles.formRow}> // Form row
-                      <div style={componentStyles.formGroup}> // Form group
-                        <label>Warranty Number:</label> // Label
+                  <div style={componentStyles.subSection}> //
+                    <h6>Warranty Information</h6> 
+                    <div style={componentStyles.formRow}> 
+                      <div style={componentStyles.formGroup}> 
+                        <label>Warranty Number:</label> 
                         <input
                           type="text"
                           value={item.warrantyNumber || ""}
@@ -588,8 +588,8 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                           style={componentStyles.input}
                         />
                       </div>
-                      <div style={componentStyles.formGroup}> // Form group
-                        <label>Warranty Valid Until:</label> // Label
+                      <div style={componentStyles.formGroup}> 
+                        <label>Warranty Valid Until:</label> 
                         <input
                           type="date"
                           value={item.warrantyValidUpto ? new Date(item.warrantyValidUpto).toISOString().split('T')[0] : ""}
@@ -599,23 +599,23 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                       </div>
                     </div>
 
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Warranty Photo:</label> // Label
+                    <div style={componentStyles.formGroup}> 
+                      <label>Warranty Photo:</label> 
                       <input
                         type="file"
-                        onChange={(e) => { // Handle file selection
-                          if (e.target.files[0]) { // Check if file exists
-                            handleFileUpload(e.target.files[0], "warrantyPhoto", index); // Upload file
+                        onChange={(e) => { 
+                          if (e.target.files[0]) { 
+                            handleFileUpload(e.target.files[0], "warrantyPhoto", index); 
                           }
                         }}
                         style={componentStyles.input}
                       />
-                      {renderImagePreview(item.warrantyPhotoUrl)} // Render warranty photo preview
+                      {renderImagePreview(item.warrantyPhotoUrl)} 
                     </div>
                   </div>
 
-                  <div style={componentStyles.formGroup}> // Form group
-                    <label>Item Photo:</label> // Label
+                  <div style={componentStyles.formGroup}> 
+                    <label>Item Photo:</label> 
                     <input
                       type="file"
                       onChange={(e) => { // Handle file selection
@@ -625,12 +625,12 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                       }}
                       style={componentStyles.input}
                     />
-                    {renderImagePreview(item.itemPhotoUrl)} // Render item photo preview
+                    {renderImagePreview(item.itemPhotoUrl)}
                   </div>
 
                   {asset.assetType === "Permanent" && ( // Conditional rendering for permanent assets
-                    <div style={componentStyles.formGroup}> // Form group
-                      <label>Item IDs (comma separated):</label> // Label
+                    <div style={componentStyles.formGroup}> 
+                      <label>Item IDs (comma separated):</label> 
                       <input
                         type="text"
                         value={item.itemIds?.join(", ") || ""}
@@ -645,74 +645,74 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
           </>
         ) : ( // View mode rendering
           <>
-            <div style={componentStyles.section}> // General information section
-              <h4>General Information</h4> // Section title
-              <div style={componentStyles.detailRow}> // Detail row
-                <div style={componentStyles.detailGroup}> // Detail group
-                  <p><strong>Asset Type:</strong> {asset.assetType || "N/A"}</p> // Display asset type
-                  <p><strong>Asset Category:</strong> {asset.assetCategory || "N/A"}</p> // Display category
-                  <p><strong>Entry Date:</strong> {new Date(asset.entryDate).toLocaleDateString()}</p> // Display entry date
-                  <p><strong>Purchase Date:</strong> {new Date(asset.purchaseDate).toLocaleDateString()}</p> // Display purchase date
+            <div style={componentStyles.section}> //
+              <h4>General Information</h4> 
+              <div style={componentStyles.detailRow}> 
+                <div style={componentStyles.detailGroup}> 
+                  <p><strong>Asset Type:</strong> {asset.assetType || "N/A"}</p> 
+                  <p><strong>Asset Category:</strong> {asset.assetCategory || "N/A"}</p> 
+                  <p><strong>Entry Date:</strong> {new Date(asset.entryDate).toLocaleDateString()}</p> 
+                  <p><strong>Purchase Date:</strong> {new Date(asset.purchaseDate).toLocaleDateString()}</p> 
                 </div>
-                <div style={componentStyles.detailGroup}> // Detail group
-                  <p><strong>Source:</strong> {asset.source || "N/A"}</p> // Display source
-                  <p><strong>Mode of Purchase:</strong> {asset.modeOfPurchase || "N/A"}</p> // Display mode of purchase
-                  <p><strong>Bill No:</strong> {asset.billNo || "N/A"}</p> // Display bill number
-                  <p><strong>Received By:</strong> {asset.receivedBy || "N/A"}</p> // Display received by
-                </div>
-              </div>
-
-              <div style={componentStyles.detailRow}> // Detail row
-                <div style={componentStyles.detailGroup}> // Detail group
-                  <p><strong>Supplier Name:</strong> {asset.supplierName || "N/A"}</p> // Display supplier name
-                  <p><strong>Supplier Address:</strong> {asset.supplierAddress || "N/A"}</p> // Display supplier address
+                <div style={componentStyles.detailGroup}> 
+                  <p><strong>Source:</strong> {asset.source || "N/A"}</p> 
+                  <p><strong>Mode of Purchase:</strong> {asset.modeOfPurchase || "N/A"}</p> 
+                  <p><strong>Bill No:</strong> {asset.billNo || "N/A"}</p> 
+                  <p><strong>Received By:</strong> {asset.receivedBy || "N/A"}</p> 
                 </div>
               </div>
 
-              {asset.billPhotoUrl && ( // Conditional rendering for bill photo
-                <div style={componentStyles.detailGroup}> // Detail group
-                  <p><strong>Bill Photo:</strong></p> // Label
-                  {renderImagePreview(asset.billPhotoUrl)} // Render bill photo preview
+              <div style={componentStyles.detailRow}> 
+                <div style={componentStyles.detailGroup}> 
+                  <p><strong>Supplier Name:</strong> {asset.supplierName || "N/A"}</p> 
+                  <p><strong>Supplier Address:</strong> {asset.supplierAddress || "N/A"}</p> 
+                </div>
+              </div>
+
+              {asset.billPhotoUrl && ( 
+                <div style={componentStyles.detailGroup}> 
+                  <p><strong>Bill Photo:</strong></p> 
+                  {renderImagePreview(asset.billPhotoUrl)} 
                 </div>
               )}
             </div>
 
             {/* Items Section */}
-            <div style={componentStyles.section}> // Items section
-              <h4>Items</h4> // Section title
-              {asset.items?.map((item, index) => ( // Map over items
-                <div key={index} style={componentStyles.itemViewContainer}> // Item container
-                  <div style={componentStyles.itemHeader}> // Item header
-                    <h5>Item {index + 1}</h5> // Item title
+            <div style={componentStyles.section}> 
+              <h4>Items</h4> 
+              {asset.items?.map((item, index) => ( 
+                <div key={index} style={componentStyles.itemViewContainer}> 
+                  <div style={componentStyles.itemHeader}> 
+                    <h5>Item {index + 1}</h5> 
                   </div>
                   
-                  <div style={componentStyles.detailRow}> // Detail row
-                    <div style={componentStyles.detailGroup}> // Detail group
-                      <p><strong>Name:</strong> {item.itemName || "N/A"}</p> // Display item name
-                      <p><strong>Sub Category:</strong> {item.subCategory || "N/A"}</p> // Display sub category
-                      <p><strong>Description:</strong> {item.itemDescription || "N/A"}</p> // Display description
+                  <div style={componentStyles.detailRow}> 
+                    <div style={componentStyles.detailGroup}> 
+                      <p><strong>Name:</strong> {item.itemName || "N/A"}</p> 
+                      <p><strong>Sub Category:</strong> {item.subCategory || "N/A"}</p> 
+                      <p><strong>Description:</strong> {item.itemDescription || "N/A"}</p> 
                     </div>
-                    <div style={componentStyles.detailGroup}> // Detail group
-                      <p><strong>Quantity:</strong> {item.quantityReceived || "N/A"}</p> // Display quantity
-                      <p><strong>Unit Price:</strong> {item.unitPrice || "N/A"}</p> // Display unit price
-                      <p><strong>Total Price:</strong> {item.totalPrice || "N/A"}</p> // Display total price
+                    <div style={componentStyles.detailGroup}> 
+                      <p><strong>Quantity:</strong> {item.quantityReceived || "N/A"}</p> 
+                      <p><strong>Unit Price:</strong> {item.unitPrice || "N/A"}</p> 
+                      <p><strong>Total Price:</strong> {item.totalPrice || "N/A"}</p> 
                     </div>
                   </div>
 
                   {/* AMC Information */}
                   {(item.amcFromDate || item.amcToDate || item.amcCost) && ( // Conditional rendering for AMC info
-                    <div style={componentStyles.subSection}> // AMC section
-                      <h3>AMC Information</h3> // Section title
-                      <div style={componentStyles.detailRow}> // Detail row
-                        <div style={componentStyles.detailGroup}> // Detail group
-                          {item.amcFromDate && <p><strong>From:</strong> {new Date(item.amcFromDate).toLocaleDateString()}</p>} // Display AMC from date
-                          {item.amcToDate && <p><strong>To:</strong> {new Date(item.amcToDate).toLocaleDateString()}</p>} // Display AMC to date
-                          {item.amcCost && <p><strong>Cost:</strong> {item.amcCost}</p>} // Display AMC cost
+                    <div style={componentStyles.subSection}> 
+                      <h3>AMC Information</h3>
+                      <div style={componentStyles.detailRow}> 
+                        <div style={componentStyles.detailGroup}> 
+                          {item.amcFromDate && <p><strong>From:</strong> {new Date(item.amcFromDate).toLocaleDateString()}</p>} 
+                          {item.amcToDate && <p><strong>To:</strong> {new Date(item.amcToDate).toLocaleDateString()}</p>} 
+                          {item.amcCost && <p><strong>Cost:</strong> {item.amcCost}</p>}
                         </div>
                         {item.amcPhotoUrl && ( // Conditional rendering for AMC photo
-                          <div style={componentStyles.detailGroup}> // Detail group
-                            <p><strong>AMC Photo:</strong></p> // Label
-                            {renderImagePreview(item.amcPhotoUrl)} // Render AMC photo preview
+                          <div style={componentStyles.detailGroup}> 
+                            <p><strong>AMC Photo:</strong></p> 
+                            {renderImagePreview(item.amcPhotoUrl)} 
                           </div>
                         )}
                       </div>
@@ -721,17 +721,17 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
 
                   {/* Warranty Information */}
                   {(item.warrantyNumber || item.warrantyValidUpto) && ( // Conditional rendering for warranty info
-                    <div style={componentStyles.subSection}> // Warranty section
-                      <h3>Warranty Information</h3> // Section title
-                      <div style={componentStyles.detailRow}> // Detail row
-                        <div style={componentStyles.detailGroup}> // Detail group
-                          {item.warrantyNumber && <p><strong>Number:</strong> {item.warrantyNumber}</p>} // Display warranty number
-                          {item.warrantyValidUpto && <p><strong>Valid Until:</strong> {new Date(item.warrantyValidUpto).toLocaleDateString()}</p>} // Display warranty valid until
+                    <div style={componentStyles.subSection}> 
+                      <h3>Warranty Information</h3> 
+                      <div style={componentStyles.detailRow}> 
+                        <div style={componentStyles.detailGroup}> 
+                          {item.warrantyNumber && <p><strong>Number:</strong> {item.warrantyNumber}</p>} 
+                          {item.warrantyValidUpto && <p><strong>Valid Until:</strong> {new Date(item.warrantyValidUpto).toLocaleDateString()}</p>} 
                         </div>
-                        {item.warrantyPhotoUrl && ( // Conditional rendering for warranty photo
-                          <div style={componentStyles.detailGroup}> // Detail group
-                            <p><strong>Warranty Photo:</strong></p> // Label
-                            {renderImagePreview(item.warrantyPhotoUrl)} // Render warranty photo preview
+                        {item.warrantyPhotoUrl && ( 
+                          <div style={componentStyles.detailGroup}> 
+                            <p><strong>Warranty Photo:</strong></p> 
+                            {renderImagePreview(item.warrantyPhotoUrl)} 
                           </div>
                         )}
                       </div>
@@ -739,15 +739,15 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
                   )}
 
                   {item.itemPhotoUrl && ( // Conditional rendering for item photo
-                    <div style={componentStyles.detailGroup}> // Detail group
-                      <p><strong>Item Photo:</strong></p> // Label
-                      {renderImagePreview(item.itemPhotoUrl)} // Render item photo preview
+                    <div style={componentStyles.detailGroup}>
+                      <p><strong>Item Photo:</strong></p> 
+                      {renderImagePreview(item.itemPhotoUrl)}
                     </div>
                   )}
 
                   {asset.assetType === "Permanent" && item.itemIds?.length > 0 && ( // Conditional rendering for item IDs
-                    <div style={componentStyles.detailGroup}> // Detail group
-                      <p><strong>Item IDs:</strong> {item.itemIds.join(", ")}</p> // Display item IDs
+                    <div style={componentStyles.detailGroup}>
+                      <p><strong>Item IDs:</strong> {item.itemIds.join(", ")}</p> 
                     </div>
                   )}
                 </div>
@@ -760,40 +760,40 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
   };
 
   return ( // Render the component UI
-    <div className="asset-updation"> // Main container
-      <meta charSet="UTF-8" /> // Set character encoding
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" /> // Set responsive viewport
-      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" /> // Import Boxicons CSS
-      <title>CASFOS - Asset Updation</title> // Set page title
+    <div className="asset-updation"> 
+      <meta charSet="UTF-8" /> 
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+      <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" /> 
+      <title>CASFOS - Asset Updation</title> 
 
-      <section id="sidebar"> // Sidebar navigation section
-        <a href="#" className="brand"> // Brand logo/link
-          <span className="text">PRINCIPAL</span> // Display Principal title
+      <section id="sidebar"> 
+        <a href="#" className="brand"> 
+          <span className="text">PRINCIPAL</span> 
         </a>
-        <ul className="side-menu top"> // Top navigation menu
-          <li><a href={`/principaldashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li> // Home menu item
-          <li className="active"><a href={`/principalassetupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Updation</span></a></li> // Asset Updation menu item (active)
-          <li><a href={`/principalassetview?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset View</span></a></li> // Asset View menu item
-          <li><a href={`/principalfacultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Faculty Updation</span></a></li> // Faculty Updation menu item
-          <li><a href={`/principalfacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li> // Faculty View menu item
+        <ul className="side-menu top"> 
+          <li><a href={`/principaldashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li> 
+          <li className="active"><a href={`/principalassetupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Updation</span></a></li> 
+          <li><a href={`/principalassetview?username=${encodeURIComponent(username)}`}><i className="bx bxs-package" /><span className="text">Asset View</span></a></li> 
+          <li><a href={`/principalfacultyupdation?username=${encodeURIComponent(username)}`}><i className="bx bxs-reply" /><span className="text">Faculty Updation</span></a></li> 
+          <li><a href={`/principalfacultyview?username=${encodeURIComponent(username)}`}><i className="bx bxs-doughnut-chart" /><span className="text">Faculty View</span></a></li> 
         </ul>
-        <ul className="side-menu"> // Bottom navigation menu
-          <li><Link to="/login" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></Link></li> // Logout menu item
+        <ul className="side-menu"> 
+          <li><Link to="/login" className="logout"><i className="bx bxs-log-out-circle" /><span className="text">Logout</span></Link></li> 
         </ul>
       </section>
 
-      <section id="content" style={componentStyles.content}> // Main content section
-        <nav style={componentStyles.nav}> // Navigation bar
-          <i className="bx bx-menu" /> // Menu toggle icon
-          <span style={componentStyles.headTitle}>Dashboard</span> // Dashboard title
-          <div style={componentStyles.usernameContainer}> // Username display container
-            <i className="bx bxs-user-circle" style={componentStyles.userIcon}></i> // User icon
-            <span style={componentStyles.username}>{username}</span> // Display username
+      <section id="content" style={componentStyles.content}> 
+        <nav style={componentStyles.nav}> 
+          <i className="bx bx-menu" /> 
+          <span style={componentStyles.headTitle}>Dashboard</span> 
+          <div style={componentStyles.usernameContainer}> 
+            <i className="bx bxs-user-circle" style={componentStyles.userIcon}></i> 
+            <span style={componentStyles.username}>{username}</span> 
           </div>
         </nav>
 
-        <h2 style={componentStyles.title}>Asset Updation</h2> // Section title
-        <div style={componentStyles.tabContainer}> // Tab container
+        <h2 style={componentStyles.title}>Asset Updation</h2> 
+        <div style={componentStyles.tabContainer}> 
           <button 
             style={activeTab === "permanent" ? componentStyles.activeTab : componentStyles.tab} 
             onClick={() => setActiveTab("permanent")} // Switch to permanent tab
@@ -808,10 +808,10 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
           </button>
         </div>
 
-        <div style={componentStyles.container}> // Main content container
+        <div style={componentStyles.container}> 
           {/* Search inputs */}
           {activeTab === "permanent" && ( // Permanent search input
-            <div style={componentStyles.searchContainer}> // Search container
+            <div style={componentStyles.searchContainer}>
               <input
                 type="text"
                 placeholder="Search permanent assets by item name..."
@@ -823,7 +823,7 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
           )}
 
           {activeTab === "consumable" && ( // Consumable search input
-            <div style={componentStyles.searchContainer}> // Search container
+            <div style={componentStyles.searchContainer}>
               <input
                 type="text"
                 placeholder="Search consumable assets by item name..."
@@ -834,7 +834,7 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
             </div>
           )}
 
-          <div style={componentStyles.cardContainer}> // Card container
+          <div style={componentStyles.cardContainer}> 
             {activeTab === "permanent" && ( // Permanent assets rendering
               filteredPermanentAssets.length > 0 ? ( // Check if assets exist
                 filteredPermanentAssets.map(renderAssetCard) // Render asset cards
@@ -850,7 +850,7 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
               filteredConsumableAssets.length > 0 ? ( // Check if assets exist
                 filteredConsumableAssets.map(renderAssetCard) // Render asset cards
               ) : (
-                <div style={componentStyles.noResults}> // No results message
+                <div style={componentStyles.noResults}>
                   {consumableSearchTerm 
                     ? `No consumable assets found matching "${consumableSearchTerm}"` 
                     : "No consumable assets available"}
@@ -862,13 +862,13 @@ function PrincipalAssetUpdation() { // Define the PrincipalAssetUpdation functio
       </section>
 
       {popupData && ( // Render popup if popupData is set
-        <div style={componentStyles.popupOverlay}> // Popup overlay
-          <div style={componentStyles.popupContent}> // Popup content
-            <h3>{popupData.assetType} Asset Details</h3> // Popup title
-            <div style={componentStyles.popupScrollableContent}> // Scrollable content
-              {renderAssetDetails(popupData)} // Render asset details
+        <div style={componentStyles.popupOverlay}>
+          <div style={componentStyles.popupContent}> 
+            <h3>{popupData.assetType} Asset Details</h3> 
+            <div style={componentStyles.popupScrollableContent}>
+              {renderAssetDetails(popupData)} 
             </div>
-            <div style={componentStyles.popupButtons}> // Button container
+            <div style={componentStyles.popupButtons}>
               {editMode ? ( // Edit mode buttons
                 <>
                   <button 
