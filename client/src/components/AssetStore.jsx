@@ -378,11 +378,11 @@ const AssetStore = () => {
    * @param {string} value - New quantity value
    */
   const handleQuantityChange = (index, value) => {
-    const quantity = value === "" ? "" : Math.max(0, parseInt(value, 10));
-    setReturnedAssets((prev) =>
-      prev.map((asset, i) => (i === index ? { ...asset, quantity } : asset))
-    );
-  };
+  const quantity = value === "" ? "" : Math.max(0, parseInt(value, 10));
+  setReturnedAssets((prev) =>
+    prev.map((asset, i) => (i === index ? { ...asset, quantity } : asset))
+  );
+};
 
   /**
    * Removes a building upgrade form
@@ -1120,6 +1120,9 @@ const AssetStore = () => {
    * @param {string|number} value - New value
    */
   const handleUpgradeFormChange = (index, field, value) => {
+    if (field === "estimate" || field === "approvedEstimate") {
+    value = Math.max(0, parseFloat(value) || 0);
+  }
     setUpgradeForms((prev) =>
       prev.map((form, i) =>
         i === index
@@ -1300,6 +1303,10 @@ const AssetStore = () => {
    * @param {string|number} value - New value
    */
   const handleItemChange = (index, field, value) => {
+    if (field === "quantityReceived" || field === "unitPrice" || field === "totalPrice" || field === "amcCost") {
+    // Ensure non-negative numbers
+    value = Math.max(0, parseFloat(value) || 0);
+  }
     if (field === "itemName" || field === "customItemName") {
       if (value.length > 100) {
         Swal.fire({
@@ -1340,6 +1347,9 @@ const AssetStore = () => {
    * @param {string} value - New value
    */
   const handleBuildingChange = (field, value) => {
+    if (field === "costOfConstruction") {
+    value = Math.max(0, parseFloat(value) || 0);
+  }
     setBuildingData((prev) => ({
       ...prev,
       [field]: value,
@@ -1946,6 +1956,9 @@ const AssetStore = () => {
    * @param {string|number} value - New value
    */
   const handleMaintenanceChange = (field, value) => {
+    if (field === "cost") {
+    value = Math.max(0, parseFloat(value) || 0);
+  }
     setMaintenanceData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -2050,6 +2063,14 @@ const AssetStore = () => {
    */
 
 const handleDisposableChange = (field, value) => {
+  const numericFields = [
+    "quantity", "purchaseValue", "bookValue", "disposalValue", 
+    "demolitionEstimate", "estimate", "approvedEstimate", "cost"
+  ];
+  
+  if (numericFields.includes(field)) {
+    value = Math.max(0, parseFloat(value) || 0);
+  }
   setDisposableData((prev) => {
     // For quantity changes
     if (field === "quantity") {

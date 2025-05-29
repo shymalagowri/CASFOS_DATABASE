@@ -40,7 +40,7 @@ const TempBuildingUpgrade = require("../model/TempBuildingUpgrade");
 // Import Node.js file system and path modules for file operations
 const fs = require("fs").promises;
 const path = require("path");
-
+require('dotenv').config();
 // Import Mongoose for MongoDB interactions
 const mongoose = require('mongoose');
 
@@ -48,7 +48,6 @@ const mongoose = require('mongoose');
 const port = process.env.PORT;
 const ip = process.env.IP;
 const serverBaseUrl = `http://${ip}:${port}`;
-
 /**
  * Controller to store a temporary asset entry
  * Handles validation and storage for different asset categories (Building, Land, Permanent/Consumable)
@@ -433,13 +432,13 @@ exports.uploadSignedReturnedReceipt = async (req, res) => {
     }
 
     // Generate signed PDF URL
-    const serverBaseUrl = process.env.SERVER_BASE_URL || `http://${ip}:${port}`;
-    const signedPdfUrl = `${serverBaseUrl}/Uploads/${req.file.filename}`;
+    const serverBaseUrl = `http://${ip}:${port}`;
+    const signedPdfUrl = `${serverBaseUrl}/uploads/${req.file.filename}`;
 
     // Handle store-sourced returns
     if (itemIds) {
       const parsedItemIds = JSON.parse(itemIds);
-      // Find StoreReturn with matching itemIds
+      
       const storeReturn = await StoreReturn.findOne({
         itemIds: { $all: parsedItemIds },
       });
@@ -454,12 +453,21 @@ exports.uploadSignedReturnedReceipt = async (req, res) => {
       // Send success response
       res.status(200).json({ success: true, signedPdfUrl, storeReturnId: storeReturn._id });
     } else {
-      // Handle non-store sourced returns
-      const asset = await StoreReturn.findByIdAndUpdate(
+      let asset;
+      if(assetType=== "Permanent") {
+      asset = await ReturnedPermanent.findByIdAndUpdate(
         assetId,
         { signedPdfUrl },
         { new: true }
       );
+    }
+    else{
+      asset = await ReturnedConsumable.findByIdAndUpdate(
+        assetId,
+        { signedPdfUrl },
+        { new: true }
+      );
+    }
       if (!asset) {
         return res.status(404).json({ success: false, message: "Asset not found" });
       }
@@ -4934,7 +4942,6 @@ exports.filterPurchase = async (req, res) => {
       result = result.concat(
         consumableAssets.flatMap((asset) => {
           if (!Array.isArray(asset.items)) {
-            console.warn("Consumable asset with missing or invalid items:", asset);
             return [];
           }
           return asset.items

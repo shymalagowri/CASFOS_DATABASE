@@ -1487,7 +1487,6 @@ const AssetView = () => {
           <a href="#" className="brand">
             <span className="text">STOREKEEPER</span>
           </a>
-          //sidebar menu
           <ul className="side-menu top">
             <li ><a href={`/storekeeperdashboard?username=${encodeURIComponent(username)}`}><i className="bx bxs-dashboard" /><span className="text">Home</span></a></li>
             <li ><a href={`/assetstore?username=${encodeURIComponent(username)}`}><i className="bx bxs-shopping-bag-alt" /><span className="text">Asset Store</span></a></li>
@@ -1506,7 +1505,6 @@ const AssetView = () => {
           <div className="title">
             <span className="text">Asset View</span>
           </div>
-          //tabs for different views
           <div className="admin-asset-tabs" style={{ marginBottom: "20px" }}>
             <button className={activeTab === "purchase" ? "active" : ""} onClick={() => setActiveTab("purchase")}>
               Purchase
@@ -1524,7 +1522,6 @@ const AssetView = () => {
               Dead Stock Register
             </button>
           </div>
-          //forms for filtering data
           <div className="admin-asset-filter-container">
             {activeTab === "purchase" && (
               <div className="admin-asset-filter-grid">

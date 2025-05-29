@@ -343,16 +343,17 @@
     backdrop-filter: blur(5px);
   }
   
-  .notification-popup {
-    max-width: 800px;
-    width: 90%;
-    max-height: 80vh;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-    background-color: #fff;
-    overflow: hidden;
-  }
+.notification-popup {
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh; /* Keep the max height */
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  background-color: #fff;
+  overflow-y: auto; /* Allow scrolling for the popup itself */
+  position: relative; /* Ensure proper stacking */
+}
   
   .notification-header {
     display: flex;
@@ -369,11 +370,30 @@
     margin: 0;
   }
   
-  .notification-list {
-    max-height: 60vh;
-    overflow-y: auto;
-    padding-right: 10px;
-  }
+ .notification-list {
+  max-height: 60vh; /* Keep the max height for the list */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding-right: 10px; /* Keep padding for scrollbar space */
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
+}
+/* Optional: Custom scrollbar styling for better visuals */
+.notification-list::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Background of the scrollbar track */
+  border-radius: 10px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #27ae60; /* Color of the scrollbar thumb */
+  border-radius: 10px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background: #219653; /* Darker color on hover */
+}
   
   .notification-banner {
     padding: 20px;

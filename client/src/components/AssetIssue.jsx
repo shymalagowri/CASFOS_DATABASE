@@ -20,7 +20,6 @@
  * Backend API: Assumes endpoints for fetching store items, checking stock, getting available IDs, storing temp issues,
  * acknowledging issues, and handling rejected issues.
  */
-
 import React, { useEffect, useState, useRef } from "react";
 import { Helmet } from "react-helmet";
 import "../styles/Style.css";
@@ -48,7 +47,7 @@ const AssetIssue = () => {
   const [assetType, setAssetType] = useState("Permanent");
   const [assetCategory, setAssetCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
-  const [customSubCategory, setCustomSubCategory] = useState(""); // State for custom subcategory
+  const [customSubCategory, setCustomSubCategory] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
   const [storeItems, setStoreItems] = useState([]);
   const [availableIds, setAvailableIds] = useState([]);
@@ -276,27 +275,66 @@ const AssetIssue = () => {
   };
 
   // Update issue item fields
-  const handleIssueItemChange = (index, field, value) => {
-    const updatedIssueItems = issueItems.map((item, i) => {
-      if (i === index) {
-        if (field === "quantity") {
-          const newQuantity = parseInt(value, 10) || 0;
-          const limitedIds = item.selectedIds.slice(0, newQuantity);
-          return { ...item, quantity: newQuantity, selectedIds: limitedIds };
-        } else if (field === "issuedTo") {
-          return {
-            ...item,
-            [field]: value,
-            name: value === "name" ? item.name : "",
-            designation: value === "name" ? item.designation : "",
-            location: value === "name" ? item.location : "",
-          };
-        }
-        return { ...item, [field]: value };
+  const handleIssueItemChange = async (index, field, value) => {
+    if (field === "quantity") {
+      const newQuantity = parseInt(value, 10) || 0;
+      // Calculate total quantity excluding the current item
+      const totalOtherQuantities = issueItems
+        .filter((_, i) => i !== index)
+        .reduce((sum, item) => sum + item.quantity, 0);
+      const maxAllowableQuantity = inStock - totalOtherQuantities;
+
+      if (newQuantity > maxAllowableQuantity) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Quantity Exceeds Stock",
+          text: `The total quantity cannot exceed the available stock of ${inStock}. You can issue up to ${maxAllowableQuantity} for this item.`,
+        });
+        // Cap the quantity to the maximum allowable
+        setIssueItems((prevItems) =>
+          prevItems.map((item, i) =>
+            i === index
+              ? {
+                  ...item,
+                  quantity: maxAllowableQuantity,
+                  selectedIds: item.selectedIds.slice(0, maxAllowableQuantity),
+                }
+              : item
+          )
+        );
+        return;
       }
-      return item;
-    });
-    setIssueItems(updatedIssueItems);
+
+      setIssueItems((prevItems) =>
+        prevItems.map((item, i) =>
+          i === index
+            ? {
+                ...item,
+                quantity: newQuantity,
+                selectedIds: item.selectedIds.slice(0, newQuantity),
+              }
+            : item
+        )
+      );
+    } else if (field === "issuedTo") {
+      setIssueItems((prevItems) =>
+        prevItems.map((item, i) =>
+          i === index
+            ? {
+                ...item,
+                [field]: value,
+                name: value === "name" ? item.name : "",
+                designation: value === "name" ? item.designation : "",
+                location: value === "name" ? item.location : "",
+              }
+            : item
+        )
+      );
+    } else {
+      setIssueItems((prevItems) =>
+        prevItems.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      );
+    }
   };
 
   // Handle individual ID selection for permanent assets

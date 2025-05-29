@@ -4,9 +4,8 @@
  * If the connection is successful, it logs a success message.
  * If the connection fails, it logs the error and exits the process.
  */
-
+require('dotenv').config();
 const mongoose = require("mongoose");
-
 const dbConnect = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
