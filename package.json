@@ -1,0 +1,70 @@
+{
+  "name": "casfos_cdms_final",
+  "version": "1.0.0",
+  "description": "inventory management project of casfos",
+  "main": "electron/main.js",
+  "scripts": {
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "start-server": "cd server && node server.js",
+    "start-client": "cd client && npm start",
+    "build-client": "cd client && npm run build",
+    "electron": "electron electron/main.js",
+    "build": "npm run build-client && electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.17.1",
+    "wait-on": "^7.0.0",
+    "mongoose": "^6.0.0",
+    "cors": "^2.8.5"
+  },
+  "build": {
+    "appId": "com.example.mernapp",
+    
+    "productName": "CASFOS CDMS",
+    "win": {
+      "target": "portable",
+      "icon": "electron/assets/app-icon.ico",
+      "extraResources": [
+        {
+          "from": "server",
+          "to": "server",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "client/dist",
+          "to": "client/dist",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "server/node_modules",
+          "to": "server/node_modules",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "server/.env",
+          "to": "server/.env"
+        },
+        {
+          "from": "client/.env",
+          "to": "client/.env"
+        },
+        {
+          "from": "electron/assets/app-icon.ico",
+          "to": "assets/app-icon.ico"
+        }
+      ]
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

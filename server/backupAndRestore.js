@@ -97,35 +97,30 @@ function backupAndRestore(type) {
           console.log(stdout || stderr);
         }
       });
-    }, 1 * 60 * 1000); // 10 minutes 10 * 60 * 1000
+    }, 10 * 60 * 1000); // 10 minutes 10 * 60 * 1000
   });
 }
 
+module.exports=backupAndRestore
 // CRON Schedules
 // Weekly: Monday 10:00 AM
-// cron.schedule('0 10 * * 1', () => {
-//   console.log('📅 Weekly backup triggered');
-//   backupAndRestore('weekly');
-// });
+cron.schedule('0 10 * * 1', () => {
+  console.log('📅 Weekly backup triggered');
+  backupAndRestore('weekly');
+});
 
-// // Monthly: 1st 10:00 AM
-// cron.schedule('0 10 1 * *', () => {
-//   console.log('📅 Monthly backup triggered');
-//   backupAndRestore('monthly');
-// });
+// Monthly: 1st 10:00 AM
+cron.schedule('0 10 1 * *', () => {
+  console.log('📅 Monthly backup triggered');
+  backupAndRestore('monthly');
+});
 
-// // Quarterly: 1st of Jan, Apr, Jul, Oct at 10:00 AM
-// cron.schedule('0 10 1 1,4,7,10 *', () => {
-//   console.log('📅 Quarterly backup triggered');
-//   backupAndRestore('quarterly');
-// });
+// Quarterly: 1st of Jan, Apr, Jul, Oct at 10:00 AM
+cron.schedule('0 10 1 1,4,7,10 *', () => {
+  console.log('📅 Quarterly backup triggered');
+  backupAndRestore('quarterly');
+});
 
-// For testing every 10 seconds (simulate quarterly)
- const task = cron.schedule('*/10 * * * * *', () => {
-   console.log('🧪 Simulated backup');
-   backupAndRestore('monthly');
-   task.stop();
- });
 
 console.log('🚀 Backup & Restore scheduler running...');
 

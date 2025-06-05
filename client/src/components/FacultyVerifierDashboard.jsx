@@ -228,7 +228,14 @@ const FacultyVerifierDashboard = () => {
           <table className="faculty-table">
             <tbody>
               {Object.entries(faculty)
-                .filter(([key]) => key !== '_id' && key !== 'conduct')
+                .filter(
+                  ([key]) =>
+                    key !== '_id' &&
+                    key !== 'conduct' &&
+                    key !== 'notifyhoo' &&
+                    key !== 'notifyprincipal' &&
+                    key !== 'notifysi'
+                )
                 .map(([key, value]) => (
                   <tr key={key}>
                     <td className="faculty-key">

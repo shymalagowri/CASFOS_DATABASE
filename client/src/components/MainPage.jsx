@@ -23,7 +23,7 @@
 import React, { useState, useEffect } from "react"; // Imports React and hooks for state and lifecycle management
 import { Link } from "react-scroll"; // Imports Link from react-scroll for smooth scrolling
 import { useNavigate } from "react-router-dom"; // Imports useNavigate for programmatic navigation
-import { FiMenu, FiX, FiMail, FiPhone, FiMapPin, FiTwitter, FiInstagram, FiLinkedin } from "react-icons/fi"; // Imports Feather Icons for UI elements
+import { FiMenu, FiX, FiMail, FiPhone, FiMapPin, FiTwitter, FiInstagram, FiFacebook } from "react-icons/fi"; // Imports Feather Icons for UI elements
 
 // -------------------
 // Main Component
@@ -68,25 +68,34 @@ const MainPage = () => {
    * Inline styles for the component
    */
   const styles = {
-    container: { // Main container
-      fontFamily: "'Poppins', sans-serif", // Uses Poppins font
-      color: "#333", // Dark text color
-      lineHeight: 1.6, // Line height for readability
-    },
+    container: {
+    fontFamily: "'Poppins', sans-serif",
+    color: "#333",
+    lineHeight: 1.6,
+    background: "#fff",
+    minHeight: "100vh",
+  },
     nav: { // Navigation bar
       background: "linear-gradient(135deg, #1e5631 0%, #2e7d32 100%)", // Green gradient background
       color: "white", // White text
-      padding: "1rem 0", // Vertical padding
       position: "fixed", // Fixed at top
-      width: "100%", // Full width
+      width: "100vw", // Full width
       top: 0, // Aligns to top
       zIndex: 1000, // High z-index for layering
       boxShadow: "0 4px 12px rgba(0,0,0,0.1)", // Subtle shadow
     },
     navContainer: { // Container for nav content
-      maxWidth: "1200px", // Maximum width
+      width: "100%", // Maximum width
       margin: "0 auto", // Centered
-      padding: "0 2rem", // Horizontal padding
+      padding: "1rem 0", // Horizontal padding
+      display: "flex", // Flexbox layout
+      justifyContent: "space-between", // Space between items
+      alignItems: "center", // Vertically centered
+      flexWrap: "wrap", // Allows wrapping
+    },
+    navContainer1: { // Container for nav content
+      maxWidth: "820px", // Maximum width
+      margin: "0 auto", // Centered
       display: "flex", // Flexbox layout
       justifyContent: "space-between", // Space between items
       alignItems: "center", // Vertically centered
@@ -101,9 +110,8 @@ const MainPage = () => {
       textAlign: "center", // Centers text
     },
     logoImg: { // Logo image
-      height: "70px", // Fixed height
-      width: "70px", // Fixed width
-      objectFit: "contain", // Preserves aspect ratio
+      height: "110px", // Fixed height
+      width: "110px", // Fixed width
     },
     logoText: { // Container for logo text
       display: "flex", // Flexbox layout
@@ -114,6 +122,7 @@ const MainPage = () => {
       fontSize: "1.4rem", // Font size
       fontWeight: 700, // Bold
       margin: "0", // No margin
+      marginLeft: "18rem", // Margin to the left
       color: "#fff", // White text
       textAlign: "center", // Centers text
       width: "100%", // Full width for centering
@@ -130,14 +139,14 @@ const MainPage = () => {
       margin: "0.2rem 0", // Small vertical margin
     },
     partnerLogos: { // Container for partner logos
+      marginLeft: "20rem", // Margin to the left
       display: "flex", // Flexbox layout
       gap: "1rem", // Space between logos
       alignItems: "center", // Vertically centered
     },
     partnerLogo: { // Individual partner logo
-      height: "50px", // Fixed height
+      height: "100px", // Fixed height
       width: "auto", // Auto width
-      objectFit: "contain", // Preserves aspect ratio
     },
     mobileMenuButton: { // Mobile menu toggle button
       fontSize: "1.5rem", // Icon size
@@ -231,14 +240,21 @@ const MainPage = () => {
       boxShadow: "0 6px 12px rgba(0,0,0,0.3)", // Larger shadow
       background: "#1e5631", // Darker green
     },
-    section: { // Generic section
-      padding: "5rem 0", // Vertical padding
-    },
-    sectionContainer: { // Section content container
-      maxWidth: "1200px", // Maximum width
-      margin: "0 auto", // Centered
-      padding: "0 2rem", // Horizontal padding
-    },
+    section: {
+    padding: "5rem 0",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+    sectionContainer: {
+    maxWidth: "1100px",
+    margin: "0 auto",
+    padding: "0 1rem",
+    width: "100%",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center", // Center all section content
+  },
     sectionTitle: { // Section title
       textAlign: "center", // Centered text
       fontSize: "2.5rem", // Font size
@@ -278,6 +294,7 @@ const MainPage = () => {
       color: "#555", // Gray text
       marginBottom: "1.5rem", // Bottom margin
       lineHeight: 1.8, // Line height
+      textAlign: "justify", // Justified text
     },
     infoBox: { // Info box for last updated
       background: "#e8f5e9", // Light green background
@@ -319,8 +336,12 @@ const MainPage = () => {
       display: "flex", // Flexbox layout
       alignItems: "flex-start", // Aligns top
       gap: "0.5rem", // Space between icon and text
-      marginBottom: "1rem", // Bottom margin
-    },
+      textAlign: "justify", // Justified text
+ontSize: "1.1rem", // Font size
+      color: "#555", // Gray text
+      marginBottom: "1.5rem", // Bottom margin
+      lineHeight: 1.8, // Line height
+      },
     listIcon: { // List item icon
       color: "#2e7d32", // Green
       marginTop: "0.3rem", // Slight offset
@@ -341,21 +362,31 @@ const MainPage = () => {
     reachText: { // How to Reach text
       flex: 1, // Takes equal space
     },
-    contactGrid: { // Contact cards grid
-      display: "grid", // Grid layout
-      gridTemplateColumns: windowWidth <= 768 ? "1fr" : "repeat(auto-fit, minmax(300px, 1fr))", // Single column on mobile, auto-fit on desktop
-      gap: "2rem", // Space between cards
-    },
-    contactCard: { // Contact card
-      background: "white", // White background
-      borderRadius: "8px", // Rounded corners
-      overflow: "hidden", // Hides overflow
-      boxShadow: "0 4px 8px rgba(0,0,0,0.1)", // Shadow
-    },
+    contactGrid: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "2rem",
+    width: "100%",
+  },
+  contactCard: {
+    background: "white",
+    borderRadius: "8px",
+    overflow: "hidden",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+    maxWidth: "600px",
+    width: "100%",
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
     contactHeader: { // Contact card header
       background: "#2e7d32", // Green background
       color: "white", // White text
       padding: "1.5rem", // Padding
+      textAlign: "center", // Centered text
     },
     contactBody: { // Contact card body
       padding: "1.5rem", // Padding
@@ -458,43 +489,50 @@ const MainPage = () => {
       {/* Navigation Bar */}
       <nav style={styles.nav}> {/* Fixed navigation bar */}
         <div style={styles.navContainer}> {/* Nav content container */}
-          <div style={styles.logoContainer}> {/* Logo and text container */}
-            <h1 style={styles.logoTitle}>DATABASE MANAGEMENT SYSTEM</h1> {/* Main title */}
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}> {/* Logo and subtitle container */}
-              <img
-                src="/images/emblem_of_india.png"
-                alt="Emblem of India"
-                style={styles.logoImg}
-              /> {/* Emblem image */}
-              <div style={styles.logoText}> {/* Text container */}
-                <h2 style={styles.logoSubtitle}>CASFOS, COIMBATORE</h2> {/* Subtitle */}
-                <p style={styles.logoCaption}>
-                  Ministry of Environment, Forest and Climate Change, Government of India
-                </p> {/* Caption */}
-              </div>
-            </div>
-          </div>
-          
-          <div style={{ 
-            ...styles.partnerLogos, 
-            display: windowWidth <= 768 ? 'none' : 'flex' 
-          }}> {/* Partner logos (hidden on mobile) */}
-            <img
-              src="/images/ministry.png"
-              alt="Ministry"
-              style={styles.partnerLogo}
-            /> {/* Ministry logo */}
-            <img
-              src="/images/casfos_dehradun.png"
-              alt="CASFOS"
-              style={styles.partnerLogo}
-            /> {/* CASFOS logo */}
-            <img
-              src="/images/lifestyle_for_environment.png"
-              alt="Lifestyle"
-              style={styles.partnerLogo}
-            /> {/* Lifestyle logo */}
-          </div>
+         <div style={{
+    width: "100vw", // Changed from maxWidth to width for full viewport width
+    minWidth: "auto", // Optional: ensures a minimum width for large layouts
+    display: "flex",
+    marginLeft: "0", // Centers the content
+    alignItems: "center",
+    justifyContent: "space-between",
+      flexWrap: "wrap",         // Allows wrapping
+    padding: "0 4rem", // Increased horizontal padding for more space
+    background: "white"
+  }}>
+    {/* Left: Emblem */}
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 120 }}>
+      <img
+        src="/images/emblem_of_india.png"
+        alt="Emblem of India"
+        style={{ height: "140px", width: "auto", marginBottom: 4 }}
+      />
+    </div>
+    {/* Center: Text */}
+    <div style={{ flex: 1, textAlign: "left", marginLeft: 32 }}>
+      <div style={{ fontSize: "1.8rem", fontWeight: 700, color: "#00695c", marginBottom: 6, fontFamily: "'Poppins',sans-serif" }}>
+        Database Management System
+      </div>
+      <div style={{ fontSize: "1.0rem", color: "#222", fontWeight: 500 }}>
+                                      Central Academy for State Forest Service Coimbatore<br /></div>
+       <div style={{ fontSize: "0.8rem", color: "#222", fontWeight: 500 }}>
+
+                             Directorate of Forest Education,<br />
+
+        Ministry of Environment, Forest and Climate Change,<br />
+        Government of India
+      </div>
+    </div>
+    {/* Right: Partner Logos */}
+    <div style={{ display: "flex", alignItems: "center", gap: "2rem", minWidth: 320, justifyContent: "flex-end" }}>
+      <img src="/images/ministry.png" alt="Ministry" style={{ height: 100, width: "auto" }} />
+      <img src="/images/casfos_logo.jpg" alt="CASFOS" style={{ height: 100, width: "auto" }} />
+      <img src="/images/lifestyle_for_environment.png" alt="Lifestyle" style={{ height: 100, width: "auto" }} />
+    </div>
+  </div>
+  </div>
+  <div>
+        <div style={styles.navContainer1}> {/* Nav content container */}
           
           <div 
             style={{ 
@@ -554,7 +592,7 @@ const MainPage = () => {
                 rel="noopener noreferrer"
                 style={styles.navLink}
               >
-                Certificate
+                Accreditation
               </a> {/* External certificate link */}
             </div>
             <button
@@ -565,6 +603,7 @@ const MainPage = () => {
             >
               Login
             </button> {/* Login button */}
+          </div>
           </div>
         </div>
       </nav>
@@ -588,14 +627,22 @@ const MainPage = () => {
             Central Academy for State Forest Service, Coimbatore
           </p> {/* Subtitle */}
           <Link
-            to="about"
-            smooth
-            duration={500}
-            style={styles.exploreButton}
-            activeStyle={styles.exploreButtonHover}
-            onMouseEnter={e => e.currentTarget.style.transform = styles.exploreButtonHover.transform} // Hover lift
-            onMouseLeave={e => e.currentTarget.style.transform = ''} // Reset
-          >
+                  key="about"
+                  to="about"
+                  smooth={true}
+                  duration={500}
+                  offset={-80} // Adjusts for fixed header
+  style={styles.exploreButton}
+  activeStyle={styles.exploreButtonHover}
+  onMouseEnter={e => e.currentTarget.style.transform = styles.exploreButtonHover.transform}
+  onMouseLeave={e => e.currentTarget.style.transform = ''}                  onClick={() => {
+                    setMenuOpen(false); // Closes mobile menu
+                    const element = document.getElementById("about");
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' }); // Smooth scroll
+                    }
+                  }}
+                >
             Explore More
           </Link> {/* Explore button */}
         </div>
@@ -614,33 +661,32 @@ const MainPage = () => {
           <div style={styles.aboutContent}> {/* About content */}
             <div style={styles.aboutText}> {/* Text content */}
               <p style={styles.aboutParagraph}>
-                The Central Academy for State Forest Service, Central Academy For
-                State Forest Service, Coimbatore (erstwhile State Forest Service
-                college) is one of the premier institutions under the aegis of
-                Directorate of Forest Education, Ministry of Environment, Forests
-                and Climate Change, which imparts professional training to newly
-                recruited RFO's and in-service training to the State Forest
-                Service Officers of ACF and DCF ranks.
+                The Central Academy for State Forest Service(CASFOS), Coimbatore is one of
+                the premier institutions under the aegis of Directorate of Forest
+                Education, Ministry of Environment, Forest and Climate Change,
+                Dehradun which imparts Professional Induction Training to the
+                newly recruited State Forest Officers (ACF) and Forest Range
+                Officers (FRO) from various States and offers In-Service Training
+                to the State Forest Service Officers of DCF, ACF, and FRO ranks.
               </p> {/* Paragraph 1 */}
-              <p style={styles.aboutParagraph}>
-                The Academy was set up in the year 1980. Earlier to this, the
-                State Forest Service Officers had been were trained at the
-                erstwhile Indian Forest College, Dehradun and State Forest Service
-                College, Burnihat.
-              </p> {/* Paragraph 2 */}
-              <div style={styles.infoBox}> {/* Info box */}
-                <p style={styles.infoText}>
-                  <strong>Last updated:</strong> 05 Mar, 2025
-                </p> {/* Last updated text */}
-              </div>
-            </div>
-            <div style={styles.aboutImage}> {/* Image container */}
-              <img
+               <img
                 src="/images/casfos_vana_vigyan.png"
                 alt="CASFOS"
                 style={{ width: "100%", height: "auto", display: "block" }} // Full-width image
               />
+              <br></br>
+              <p style={styles.aboutParagraph}>
+                It also conducts General Awareness & Capacity building courses/workshops for other stake holders on importance of Forests, Forest Policy and Law to enable smooth interface between Forest and other departments
+              </p>
+              <p style={styles.aboutParagraph}>
+                The Academy was set up in the year 1980. Prior to this, the
+                State Forest Service Officers had been were trained at the
+                erstwhile Indian Forest College, Dehradun and State Forest Service
+                College, Burnihat.
+              </p> {/* Paragraph 2 */}
+             
             </div>
+           
           </div>
         </div>
       </section>
@@ -654,19 +700,32 @@ const MainPage = () => {
               <span style={styles.sectionTitleLine}></span> {/* Underline */}
             </h2>
           </div>
-          
+
           <div style={styles.historyContent}> {/* History content */}
             <div style={styles.historyMain}> {/* Main text content */}
+                                      <h3 style={styles.subsectionTitle}>Genesis of Forest Training in Coimbatore</h3> {/* Subsection title */}
+
               <p style={styles.aboutParagraph}>
-                The Central Academy for State Forest Service, Coimbatore is one of
-                the premier institutions under the aegis of Directorate of Forest
-                Education, Ministry of Environment, Forest and Climate Change,
-                Dehradun which imparts Professional Induction Training to the
-                newly recruited State Forest Officers (ACF) and Forest Range
-                Officers (FRO) from various States and offers In-Service Training
-                to the State Forest Service Officers of DCF, ACF, and FRO ranks.
+                It is interesting to note that CASFOS Coimbatore played a major role in forestry education and training in South India. The Forestry Education commenced in India in 1867, based on the recommendation of Sir Dietrich Brandis, the First Inspector General of Forests. A Forest school was set up to train Rangers and Foresters at Dehradun in the year 1878 by the then North West Province which was later taken over by the Government of India and designated as the Imperial Forest College.
               </p> {/* Paragraph */}
-              
+              <p style={styles.aboutParagraph}>
+                Next mile stone in Forestry Education in India was the establishment of Madras Forest College at Coimbatore in the year 1912 by the then Madras Presidency with Mr. F. L. C. Cowley Brown, IFS, as its first Principal. Mr. F. A. Lodge, then Conservator of Forests in Coimbatore was instrumental in the establishment of this College. It was the second Forest Rangers College in India, after DehraDun. It was set up to meet the rising demand of trained Foresters in the country, especially those from South India.
+              </p>
+              <p style={styles.aboutParagraph}>
+                During the Second World War, the Madras Forest College was closed down and was revived in 1945 by Mr. C. R. Ranganathan, IFS, as its first Indian Principal. It was taken over by the Government of India in 1948 to train more number of Forest Ranger Trainees as the demand was going up after Independence.
+              </p>
+              <p  style={styles.aboutParagraph}>
+                The historic Forest Campus that housed the MFC later became the “Southern Forest Rangers College” (SFRC) in the year 1955. Under the aegis of Government of India, 31 batches of Forest Rangers passed out from the SFRC after completing rigorous training of two years. SFRC has trained more than 4000 Forest Ranger officers between 1912 and 1988. The trainees included not only Indians but also from Ceylon, Afghanistan, Uganda, Malaya, Ghana, Fiji, Laos, Sierra Leone, British Guyana, etc.
+              </p>
+              <p style={styles.aboutParagraph}>
+                Due to policy decision of the Government of India, that imparting Induction and In-service Training to the Forestry Personnel below the rank of Assistant Conservator of Forests should rest with the State Government, the training activities came to an end on 31.12.1987 in the Southern Forest Rangers College.
+                </p>
+                <p style={styles.aboutParagraph}>
+                  State Forest Service Officers were trained at the College, erstwhile Indian Forest College, Dehradun and State Forest Service College, Burnihat. With the advent of various developmental schemes in the Forestry sector during the IV and V Five year plans, and launching of the Social Forestry Projects in many States, the Government of India felt the urgency of starting two more institutions to train the increasing number of officers specially from the State Services, and as a sequel to this the State Forest Service College, Coimbatore was established on 25th January, 1980 under the aegis of Directorate of Forest Education, Ministry of Environment & Forests. Later it was rechristened as Central Academy for State Forest Service (CASFOS).
+                </p>
+                <p style={styles.aboutParagraph}>
+                  CASFOS Coimbatore was brought under the single administrative control of Director, IGNFA, Dehradun along with the other Academies as integration of all Forest Training Academies under a single command. (Vide order no. 15-15/2018-RT, dated 03-02-2022)
+                </p>
               <h3 style={styles.subsectionTitle}>Mandate</h3> {/* Subsection title */}
               <ul style={{ listStyle: "none", padding: 0 }}> {/* Mandate list */}
                 {[
@@ -682,50 +741,10 @@ const MainPage = () => {
                 ))}
               </ul>
               
-              <h3 style={styles.subsectionTitle}>Genesis of Forest Training in Coimbatore</h3> {/* Subsection title */}
-              <p style={styles.aboutParagraph}>
-                It is interesting to note that CASFOS Coimbatore played a major
-                role in forestry education and training in South India. The
-                Forestry Education commenced in India in 1867, based on the
-                recommendation of Sir Dietrich Brandis, the First Inspector
-                General of Forests.
-              </p> {/* Paragraph */}
+            
             </div>
             
-            <div style={styles.historyImages}> {/* Images container */}
-              <div style={styles.historyImage}> {/* Image 1 */}
-                <img
-                  src="/images/casfos_coimbatore_img4.jpg"
-                  alt="History"
-                  style={{ width: "100%", height: "auto", display: "block" }} // Full-width image
-                />
-                <p style={{ textAlign: "center", fontStyle: "italic", marginTop: "0.5rem" }}>
-                  The historic Forest Campus
-                </p> {/* Caption */}
-              </div>
-              
-              <div style={styles.historyImage}> {/* Image 2 */}
-                <img
-                  src="/images/casfos_coimbatore_img5.jpg"
-                  alt="History"
-                  style={{ width: "100%", height: "auto", display: "block" }} // Full-width image
-                />
-                <p style={{ textAlign: "center", fontStyle: "italic", marginTop: "0.5rem" }}>
-                  CASFOS Campus View
-                </p> {/* Caption */}
-              </div>
-              
-              <div style={styles.historyImage}> {/* Image 3 */}
-                <img
-                  src="/images/casfos_coimbatore_img3.jpg"
-                  alt="History"
-                  style={{ width: "100%", height: "auto", display: "block" }} // Full-width image
-                />
-                <p style={{ textAlign: "center", fontStyle: "italic", marginTop: "0.5rem" }}>
-                  Training Session
-                </p> {/* Caption */}
-              </div>
-            </div>
+           
           </div>
         </div>
       </section>
@@ -803,8 +822,13 @@ const MainPage = () => {
           <div style={styles.contactGrid}> {/* Contact cards grid */}
             <div style={styles.contactCard}> {/* Contact info card */}
               <div style={styles.contactHeader}> {/* Card header */}
-                <h3 style={{ margin: 0 }}>Central Academy for State Forest Service</h3> {/* Title */}
-                <p style={{ margin: "0.5rem 0 0 0", opacity: 0.9 }}>Directorate of Forest Education</p> {/* Subtitle */}
+                
+                <h3 style={{ margin: 0 }}>The Principal,</h3> {/* Title */}
+                                <h3 style={{ margin: 0 }}>Central Academy for State Forest Service Coimbatore,</h3> {/* Title */}
+                                <h3 style={{ margin: 0 }}>Directorate of Forest Education,</h3> {/* Title */}
+                                <h3 style={{ margin: 0 }}>Ministry of Environment, Forest and Climate Change,</h3> {/* Title */}
+                                <h3 style={{ margin: 0 }}>Government of India</h3> {/* Title */}
+
               </div>
               <div style={styles.contactBody}> {/* Card body */}
                 <div style={styles.contactItem}> {/* Email item */}
@@ -835,51 +859,7 @@ const MainPage = () => {
               </div>
             </div>
             
-            <div style={styles.contactCard}> {/* Contact form card */}
-              <div style={styles.contactHeader}> {/* Card header */}
-                <h3 style={{ margin: 0 }}>Quick Contact Form</h3> {/* Title */}
-                <p style={{ margin: "0.5rem 0 0 0", opacity: 0.9 }}>We'll get back to you soon</p> {/* Subtitle */}
-              </div>
-              <div style={styles.contactBody}> {/* Card body */}
-                <form> {/* Contact form */}
-                  <div>
-                    <label htmlFor="name" style={{ display: "block", marginBottom: "0.5rem" }}>Name</label> {/* Name label */}
-                    <input
-                      type="text"
-                      id="name"
-                      style={styles.formInput}
-                      placeholder="Your Name"
-                    /> {/* Name input */}
-                  </div>
-                  <div>
-                    <label htmlFor="email" style={{ display: "block", marginBottom: "0.5rem" }}>Email</label> {/* Email label */}
-                    <input
-                      type="email"
-                      id="email"
-                      style={styles.formInput}
-                      placeholder="Your Email"
-                    /> {/* Email input */}
-                  </div>
-                  <div>
-                    <label htmlFor="message" style={{ display: "block", marginBottom: "0.5rem" }}>Message</label> {/* Message label */}
-                    <textarea
-                      id="message"
-                      rows="4"
-                      style={styles.formTextarea}
-                      placeholder="Your Message"
-                    ></textarea> {/* Message textarea */}
-                  </div>
-                  <button
-                    type="submit"
-                    style={styles.submitButton}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = styles.submitButtonHover.backgroundColor} // Hover color
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = styles.submitButton.backgroundColor} // Default color
-                  >
-                    Send Message
-                  </button> {/* Submit button */}
-                </form>
-              </div>
-            </div>
+            
           </div>
         </div>
       </section>
@@ -890,6 +870,9 @@ const MainPage = () => {
           <div style={styles.footerLogo}> {/* Logo section */}
             <h3 style={{ margin: "0 0 0.5rem 0" }}>CASFOS, Coimbatore</h3> {/* Title */}
             <p style={{ margin: "0.2rem 0", opacity: 0.8 }}>
+              Directorate of Forest Education
+            </p>
+            <p style={{ margin: "0.2rem 0", opacity: 0.8 }}>
               Ministry of Environment, Forest and Climate Change
             </p> {/* Subtitle 1 */}
             <p style={{ margin: "0.2rem 0", opacity: 0.8 }}>
@@ -897,14 +880,14 @@ const MainPage = () => {
             </p> {/* Subtitle 2 */}
           </div>
           <div style={styles.socialLinks}> {/* Social media links */}
-            <a href="#" style={styles.socialLink}>
+            <a href="https://twitter.com/dfe_goi" style={styles.socialLink}>
               <FiTwitter />
             </a> {/* Twitter link */}
-            <a href="#" style={styles.socialLink}>
+            <a href="https://www.instagram.com/dfe_goi/" style={styles.socialLink}>
               <FiInstagram />
             </a> {/* Instagram link */}
-            <a href="#" style={styles.socialLink}>
-              <FiLinkedin />
+            <a href="https://www.facebook.com/DFE.Dehradun" style={styles.socialLink}>
+    <FiFacebook />
             </a> {/* LinkedIn link */}
           </div>
           <p style={styles.copyright}>

@@ -24,7 +24,7 @@ const deadStockRegisterSchema = new mongoose.Schema({
   // Subcategory of the asset
   assetSubCategory: { 
     type: String, 
-    required: true 
+    required: false 
   },
   // Name of the item
   itemName: { 

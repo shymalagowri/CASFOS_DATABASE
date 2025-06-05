@@ -424,7 +424,8 @@ exports.uploadInvoice = async (req, res) => {
  * Controller to upload signed returned receipt PDF
  */
 exports.uploadSignedReturnedReceipt = async (req, res) => {
-  const { assetId, assetType, itemIds } = req.body;
+  console.log("Uploading signed receipt...");
+  const { assetId, assetType, itemIds,source } = req.body;
   try {
     // Validate required fields
     if (!req.file || !assetId || !assetType) {
@@ -434,9 +435,9 @@ exports.uploadSignedReturnedReceipt = async (req, res) => {
     // Generate signed PDF URL
     const serverBaseUrl = `http://${ip}:${port}`;
     const signedPdfUrl = `${serverBaseUrl}/uploads/${req.file.filename}`;
-
-    // Handle store-sourced returns
-    if (itemIds) {
+    if(source==="store")
+    {
+if (itemIds) {
       const parsedItemIds = JSON.parse(itemIds);
       
       const storeReturn = await StoreReturn.findOne({
@@ -451,8 +452,23 @@ exports.uploadSignedReturnedReceipt = async (req, res) => {
       await storeReturn.save();
 
       // Send success response
-      res.status(200).json({ success: true, signedPdfUrl, storeReturnId: storeReturn._id });
+      return res.status(200).json({ success: true, signedPdfUrl, storeReturnId: storeReturn._id });
     } else {
+      console.log("eneterd");
+      const storeReturn = await StoreReturn.findByIdAndUpdate(
+        { _id: assetId },
+        { signedPdfUrl },
+        { new: true }
+      );
+      console.log("Store return updated:", storeReturn);
+    }
+          return res.status(200).json({ success: true, signedPdfUrl });
+
+  }
+    // Handle store-sourced returns
+     else {
+      console.log("Updating returned asset with signed receipt...");
+      console.log(req.body);
       let asset;
       if(assetType=== "Permanent") {
       asset = await ReturnedPermanent.findByIdAndUpdate(
@@ -473,7 +489,7 @@ exports.uploadSignedReturnedReceipt = async (req, res) => {
       }
 
       // Send success response
-      res.status(200).json({ success: true, signedPdfUrl });
+      return res.status(200).json({ success: true, signedPdfUrl });
     }
   } catch (error) {
     console.error("Error uploading signed receipt:", error);
@@ -798,9 +814,9 @@ exports.issue = async (req, res) => {
 
     // Save PDF file
     const filename = `pdf-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
-    const pdfPath = path.join(__dirname, "../Uploads", filename);
+    const pdfPath = path.join(__dirname, "../uploads", filename);
     await fs.writeFile(pdfPath, Buffer.from(pdfBase64, "base64"));
-    const pdfUrl = `${serverBaseUrl}/Uploads/${filename}`;
+    const pdfUrl = `${serverBaseUrl}/uploads/${filename}`;
 
     // Create new TempIssue
     const tempIssue = new TempIssue({
@@ -871,7 +887,7 @@ exports.acknowledgeTempIssue = async (req, res) => {
 
     const { tempIssueId } = req.body;
     // Generate signed PDF URL
-    const signedPdfUrl = `${serverBaseUrl}/Uploads/${req.file.filename}`;
+    const signedPdfUrl = `${serverBaseUrl}/uploads/${req.file.filename}`;
     // Find TempIssue by ID
     const tempIssue = await TempIssue.findById(tempIssueId);
 
@@ -1011,27 +1027,31 @@ exports.storeReturnedReceipt = async (req, res) => {
 
     // Save PDF file
     const filename = `returned-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
-    const pdfPath = path.join(__dirname, "../Uploads", filename);
+    const pdfPath = path.join(__dirname, "../uploads", filename);
     await fs.mkdir(path.dirname(pdfPath), { recursive: true });
     await fs.writeFile(pdfPath, Buffer.from(pdfBase64, "base64"));
 
     // Generate PDF URL
     const serverBaseUrl = process.env.SERVER_BASE_URL || `http://${ip}:${port}`;
-    const pdfUrl = `${serverBaseUrl}/Uploads/${filename}`;
+    const pdfUrl = `${serverBaseUrl}/uploads/${filename}`;
 
     if (source === "store") {
       let storeReturn;
 
       if (assetType === "Permanent" && itemIds) {
         // Check for existing StoreReturn
+        console.log("Checking for existing StoreReturn with itemIds:", itemIds);
         storeReturn = await StoreReturn.findOne({
-          itemIds: { $in: itemIds },
-          assetType,
-          originalStoreId: assetId,
+         assetType,
+          assetCategory,
+          itemName,
+          subCategory,
+          itemDescription,
         });
 
         if (storeReturn) {
           // Update existing StoreReturn
+          storeReturn.itemIds = itemIds; // <-- update itemIds to new array
           storeReturn.pdfUrl = pdfUrl;
           storeReturn.signedPdfUrl = null;
           await storeReturn.save();
@@ -1053,13 +1073,13 @@ exports.storeReturnedReceipt = async (req, res) => {
         }
       } else if (assetType === "Consumable") {
         // Check for existing StoreReturn
+        console.log(assetId)
         storeReturn = await StoreReturn.findOne({
           assetType,
           assetCategory,
           itemName,
           subCategory,
           itemDescription,
-          originalStoreId: assetId,
         });
 
         if (storeReturn) {
@@ -1144,12 +1164,14 @@ exports.saveReturnedStatus = async (req, res) => {
       // Handle store-sourced returns
       const storeReturn = await StoreReturn.findById(_id);
       if (!storeReturn) {
+        console.error("Store return entry not found for ID:", _id);
         return res.status(404).json({ message: "Store return entry not found" });
       }
 
       // Find store item
       const storeItem = await StoreModel.findById(storeReturn.originalStoreId);
       if (!storeItem) {
+        console.error("Store item not found for ID:", storeReturn.originalStoreId);
         return res.status(404).json({ message: "Store item not found" });
       }
 

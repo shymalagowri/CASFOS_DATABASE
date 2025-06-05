@@ -1764,7 +1764,11 @@ const AssetStore = () => {
       returnedAssets[index].source === "store" &&
       returnedAssets[index].assetType === "Permanent"
     ) {
+                  formData.append("source","store");
       formData.append("itemIds", JSON.stringify(returnedAssets[index].selectedIds));
+    }
+    if( returnedAssets[index].source === "store" && returnedAssets[index].assetType === "Consumable") {
+            formData.append("source","store");
     }
     try {
       const response = await axios.post(
@@ -2122,26 +2126,38 @@ const handleDisposableChange = (field, value) => {
   };
 
   const handleSubmitServiced = async () => {
-    if (!servicedData.itemName || !servicedData.subCategory || !servicedData.itemDescription || servicedData.itemIds.length === 0 || !servicedData.serviceNo || !servicedData.serviceDate || servicedData.serviceAmount <= 0) {
-      Swal.fire({ icon: "warning", title: "Warning", text: "Please fill all fields and select at least one ID!" });
-      return;
-    }
+    // Log state for debugging
+    console.log("Submitting serviced data:", {
+      itemName: servicedData.itemName,
+      subCategory: servicedData.subCategory,
+      itemDescription: servicedData.itemDescription,
+      itemIds: servicedData.itemIds,
+      serviceNo: servicedData.serviceNo,
+      serviceDate: servicedData.serviceDate,
+      serviceAmount: servicedData.serviceAmount,
+    });
+  
+    // Validate service date
     if (isFutureDate(servicedData.serviceDate)) {
-      Swal.fire({ icon: "warning", title: "Warning", text: "Service Date cannot be in the future!" });
+      Swal.fire({
+        icon: "warning",
+        title: "Warning",
+        text: "Service Date cannot be in the future!",
+      });
       return;
     }
-
+  
     try {
       await axios.post(`http://${ip}:${port}/api/assets/saveServiced`, {
         assetType,
         assetCategory,
-        itemName: servicedData.itemName,
-        subCategory: servicedData.subCategory,
-        itemDescription: servicedData.itemDescription,
-        itemIds: servicedData.itemIds,
-        serviceNo: servicedData.serviceNo,
-        serviceDate: servicedData.serviceDate,
-        serviceAmount: servicedData.serviceAmount,
+        itemName: servicedData.itemName || "", // Default to empty string if undefined
+        subCategory: servicedData.subCategory || "", // Default to empty string if undefined
+        itemDescription: servicedData.itemDescription || "", // Default to empty string if undefined
+        itemIds: servicedData.itemIds || [], // Default to empty array if undefined
+        serviceNo: servicedData.serviceNo || "", // Default to empty string if undefined
+        serviceDate: servicedData.serviceDate || "", // Default to empty string if undefined
+        serviceAmount: servicedData.serviceAmount || 0, // Default to 0 if undefined
       });
       if (isEditingRejected && rejectedId && rejectedAction === "service") {
         await axios.delete(`http://${ip}:${port}/api/assets/rejected-asset/${rejectedId}`);
@@ -2153,10 +2169,9 @@ const handleDisposableChange = (field, value) => {
       window.history.replaceState(null, "", `/assetstore?username=${encodeURIComponent(username)}&tab=serviced`);
     } catch (error) {
       Swal.fire({ icon: "error", title: "Oops...", text: "Failed to save serviced asset!" });
-      console.error(error);
+      console.error("Submission error:", error);
     }
   };
-
   const removeItem = (index) => {
     setItems((prevItems) => prevItems.filter((_, i) => i !== index));
     setItemPhotoUrls((prev) => {
@@ -3578,6 +3593,8 @@ return (
                 <p><strong>Location:</strong> Store</p>
                 {asset.assetType === "Consumable" && (
                   <div style={styles.inputGroup}>
+                                  <p><strong>In Stock:</strong> {asset.returnedQuantity || "N/A"}</p>
+
                     <label><strong>Quantity to be returned:</strong></label>
                     <input
                       type="number"

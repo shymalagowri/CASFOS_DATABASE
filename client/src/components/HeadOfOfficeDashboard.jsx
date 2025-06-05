@@ -204,7 +204,14 @@ const HOODashboard = () => {
         return (
           <ul className="faculty-list">
             {Object.entries(value)
-              .filter(([subKey]) => subKey !== '_id' && subKey !== 'conduct')
+              .filter(
+                ([key]) =>
+                  key !== '_id' &&
+                  key !== 'conduct' &&
+                  key !== 'notifyhoo' &&
+                  key !== 'notifyprincipal' &&
+                  key !== 'notifysi'
+              )
               .map(([subKey, subValue]) => (
                 <li key={subKey}>
                   <strong>
@@ -226,7 +233,14 @@ const HOODashboard = () => {
           <table className="faculty-table">
             <tbody>
               {Object.entries(faculty)
-                .filter(([key]) => key !== '_id' && key !== 'conduct')
+                .filter(
+                  ([key]) =>
+                    key !== '_id' &&
+                    key !== 'conduct' &&
+                    key !== 'notifyhoo' &&
+                    key !== 'notifyprincipal' &&
+                    key !== 'notifysi'
+                )
                 .map(([key, value]) => (
                   <tr key={key}>
                     <td className="faculty-key">
