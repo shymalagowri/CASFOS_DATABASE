@@ -3,10 +3,10 @@
  * This is a React component for the Storekeeper Dashboard in an asset management system for the Central Academy for State Forest Service (CASFOS).
  * It serves as the main interface for storekeepers, providing:
  * - A sidebar for navigation to various asset management sections (Asset Store, Issue, Return, Updation, View).
- * - A notification system to display recent asset-related actions (approvals, rejections, etc.) with expandable details and clear options.
- * - Static sections for About Us, History, How to Reach, and Contact Us, showcasing institutional information.
- * - A hero section with placeholder statistics for total assets, issued, returned, and in maintenance.
- * - Responsive design with a modern UI, using external CSS (dashstyle.css, style.css) and inline styles for specific elements.
+ * - A notification system to display recent asset-related actions (approvals, rejections, etc.) with expandable details, update options, and clear functionality.
+ * - Static sections for About Us, History, How to Reach, and Contact Us, showcasing institutional information, styled consistently with PrincipalDashboard.
+ * - A hero section highlighting the institution's role.
+ * - Responsive design with a modern UI, using external CSS (dashstyle.css, style.css) and inline styles for consistency.
  * 
  * The component uses React Router for URL parameter parsing, axios for API calls to fetch and manage notifications, and Helmet for SEO and metadata.
  * Notifications are fetched from a backend API at 'http://${ip}:${port}' and limited to the 50 most recent, sorted by action time.
@@ -16,11 +16,9 @@ import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import { FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
 import '../styles/DashStyle.css';
 
-/**
- * Constants for notification actions and their corresponding tabs for redirection
- */
 const NOTIFICATION_TABS = {
   'building maintenance': 'service',
   'building upgrade': 'building-upgrade',
@@ -28,8 +26,6 @@ const NOTIFICATION_TABS = {
   issue: 'assetissue',
   service: 'assetstore',
   updation: 'storekeeperassetupdation',
-  // No specific tabs for HOO actions as they are handled by HOO approval page
-  // 'return approved with HOO waiting' and 'return approved by HOO' are informational and don't redirect
 };
 
 const StorekeeperDashboard = () => {
@@ -39,6 +35,7 @@ const StorekeeperDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [expandedNotification, setExpandedNotification] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Router and URL params
   const location = useLocation();
@@ -46,9 +43,16 @@ const StorekeeperDashboard = () => {
   const username = queryParams.get('username') || 'Guest';
   const serverBaseUrl = `http://${ip}:${port}`;
 
-  /**
-   * Fetches notifications on component mount, sorted by action time, limited to 50
-   */
+  // Window Resize Handler
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Fetch notifications
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -64,22 +68,19 @@ const StorekeeperDashboard = () => {
     fetchNotifications();
   }, []);
 
-  /**
-   * Clears a single notification by ID
-   * @param {string} id - Notification ID
-   */
+  // Notification handlers
   const handleClearNotification = async (id) => {
     try {
       await axios.delete(`${serverBaseUrl}/api/assets/delete-asset-notification/${id}`);
       setNotifications(notifications.filter((notif) => notif._id !== id));
+      if (expandedNotification === id) {
+        setExpandedNotification(null);
+      }
     } catch (error) {
       console.error('Error clearing notification:', error);
     }
   };
 
-  /**
-   * Clears all notifications
-   */
   const handleClearAll = async () => {
     try {
       await axios.delete(`${serverBaseUrl}/api/assets/delete-all-asset-notification`);
@@ -90,87 +91,70 @@ const StorekeeperDashboard = () => {
     }
   };
 
-  /**
-   * Toggles expansion of notification details
-   * @param {string} id - Notification ID
-   */
   const toggleExpand = (id) => {
     setExpandedNotification(expandedNotification === id ? null : id);
   };
 
-  /**
-   * Toggles visibility of the notification panel
-   */
   const toggleNotificationPanel = () => {
     setShowNotifications(!showNotifications);
   };
 
-  /**
-   * Formats the notification title based on action and asset details
-   * @param {Object} notification - Notification object
-   * @returns {string} - Formatted title
-   */
   const formatNotificationTitle = (notification) => {
     const { action, assetCategory, itemNames, subCategory, condition } = notification;
     const itemName = itemNames?.[0] || subCategory || assetCategory || 'item';
   
     switch (action) {
-      case "asset approved":
+      case 'asset approved':
         return `Asset Manager approved purchased ${assetCategory || 'assets'}`;
-      case "asset rejected":
+      case 'asset rejected':
         return `Asset Manager rejected ${itemName} purchase`;
-      case "issue approved":
+      case 'issue approved':
         return `Asset Manager approved issuing ${itemName}`;
-      case "issue rejected":
+      case 'issue rejected':
         return `Asset Manager rejected issuing ${itemName}`;
-      case "service approved":
+      case 'service approved':
         return `Asset Manager approved ${itemName} for service`;
-      case "service rejected":
+      case 'service rejected':
         return `Asset Manager rejected ${itemName} for service`;
-      case "return approved":
+      case 'return approved':
         return `Asset Manager approved ${itemName} return for ${condition || 'N/A'}`;
-      case "return rejected":
+      case 'return rejected':
         return `Asset Manager rejected ${itemName} return for ${condition || 'N/A'}`;
-      case "exchange approved":
+      case 'exchange approved':
         return `Asset Manager exchanged ${itemName}`;
-      case "exchange rejected":
+      case 'exchange rejected':
         return `Asset Manager cancelled exchange ${itemName}`;
-      case "asset disposal approved":
+      case 'asset disposal approved':
         return `Asset Manager approved disposing ${itemName}`;
-      case "asset disposal cancelled":
+      case 'asset disposal cancelled':
         return `Asset Manager cancelled ${itemName} for disposal`;
-      case "condition changed":
+      case 'condition changed':
         return `Asset Manager changed returned asset condition of ${itemName}`;
-      case "asset updation approved":
+      case 'asset updation approved':
         return `Asset Manager approved update for ${itemName}`;
-      case "asset updation rejected":
+      case 'asset updation rejected':
         return `Asset Manager rejected update for ${itemName}`;
-      case "building upgrade approved":
+      case 'building upgrade approved':
         return `Asset Manager approved building upgrade for ${itemName}`;
-      case "building upgrade rejected":
+      case 'building upgrade rejected':
         return `Asset Manager rejected building upgrade for ${itemName}`;
-      case "building disposal cancelled":
+      case 'building disposal cancelled':
         return `Asset Manager cancelled building disposal for ${itemName}`;
-      case "building maintenance approved":
+      case 'building maintenance approved':
         return `Asset Manager approved maintenance for ${itemName}`;
-      case "building maintenance rejected":
+      case 'building maintenance rejected':
         return `Asset Manager rejected maintenance for ${itemName}`;
-      case "return approved with HOO waiting":
+      case 'return approved with HOO waiting':
         return `HOO is reviewing ${itemName} return for disposal`;
-      case "return approved by HOO":
+      case 'return approved by HOO':
         return `HOO approved ${itemName} return for disposal`;
-      case "return rejected by HOO":
+      case 'return rejected by HOO':
         return `HOO rejected ${itemName} return for disposal`;
       default:
         return `${action} - ${assetCategory}`;
     }
   };
 
-  /**
-   * Renders detailed information for an expanded notification
-   * @param {Object} notification - Notification object
-   * @returns {JSX.Element} - Notification details component
-   */
   const renderNotificationDetails = (notification) => {
     const {
       _id,
@@ -194,97 +178,259 @@ const StorekeeperDashboard = () => {
     } = notification;
   
     return (
-      <div className='notification-table'>
+      <div className="notification-table">
         <p><strong>Action Time:</strong> {new Date(actionTime).toLocaleString()}</p>
-        {action.includes("asset approved") || action.includes("asset rejected") ? (
+        {action.includes('asset approved') || action.includes('asset rejected') ? (
           <>
-            <p><strong>Asset Type:</strong> {assetType || "N/A"}</p>
-            <p><strong>Asset Category:</strong> {assetCategory || "N/A"}</p>
-            <p><strong>Supplier Name:</strong> {supplierName || "N/A"}</p>
-            <p><strong>Purchase Date:</strong> {purchaseDate ? new Date(purchaseDate).toLocaleDateString() : "N/A"}</p>
-            <p><strong>Bill No:</strong> {billNo || "N/A"}</p>
-            <p><strong>Received By:</strong> {receivedBy || "N/A"}</p>
+            <p><strong>Asset Type:</strong> {assetType || 'N/A'}</p>
+            <p><strong>Asset Category:</strong> {assetCategory || 'N/A'}</p>
+            <p><strong>Supplier Name:</strong> {supplierName || 'N/A'}</p>
+            <p><strong>Purchase Date:</strong> {purchaseDate ? new Date(purchaseDate).toLocaleDateString() : 'N/A'}</p>
+            <p><strong>Bill No:</strong> {billNo || 'N/A'}</p>
+            <p><strong>Received By:</strong> {receivedBy || 'N/A'}</p>
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
-        ) : action.includes("building maintenance approved") || action.includes("building maintenance rejected") ? (
+        ) : action.includes('building maintenance approved') || action.includes('building maintenance rejected') ? (
           <>
-            <p><strong>Asset Type:</strong> {assetType || "N/A"}</p>
-            <p><strong>Asset Category:</strong> {assetCategory || "N/A"}</p>
-            <p><strong>Sub Category:</strong> {subCategory || "N/A"}</p>
-            <p><strong>Location:</strong> {location || "N/A"}</p>
+            <p><strong>Asset Type:</strong> {assetType || 'N/A'}</p>
+            <p><strong>Asset Category:</strong> {assetCategory || 'N/A'}</p>
+            <p><strong>Sub Category:</strong> {subCategory || 'N/A'}</p>
+            <p><strong>Location:</strong> {location || 'N/A'}</p>
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
-        ) : action.includes("issue") || action.includes("service") || action.includes("exchange") ? (
+        ) : action.includes('issue') || action.includes('service') || action.includes('exchange') ? (
           <>
-            <p><strong>Item:</strong> {itemName || itemNames?.join(", ") || "N/A"}</p>
-            <p><strong>Subcategory:</strong> {subCategory || "N/A"}</p>
+            <p><strong>Item:</strong> {itemName || itemNames?.join(', ') || 'N/A'}</p>
+            <p><strong>Subcategory:</strong> {subCategory || 'N/A'}</p>
             {quantity && <p><strong>Quantity:</strong> {quantity}</p>}
             {location && <p><strong>Location:</strong> {location}</p>}
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
-        ) : action.includes("return") ? (
+        ) : action.includes('return') ? (
           <>
-            <p><strong>Item:</strong> {itemName || itemNames?.join(", ") || "N/A"}</p>
-            <p><strong>Subcategory:</strong> {subCategory || "N/A"}</p>
-            <p><strong>Returned From:</strong> {location || "N/A"}</p>
-            <p><strong>Condition:</strong> {condition || "N/A"}</p>
+            <p><strong>Item:</strong> {itemName || itemNames?.join(', ') || 'N/A'}</p>
+            <p><strong>Subcategory:</strong> {subCategory || 'N/A'}</p>
+            <p><strong>Returned From:</strong> {location || 'N/A'}</p>
+            <p><strong>Condition:</strong> {condition || 'N/A'}</p>
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
-        ) : action.includes("building disposal cancelled") ? (
+        ) : action.includes('building disposal cancelled') ? (
           <>
-            <p><strong>Subcategory:</strong> {subCategory || "N/A"}</p>
+            <p><strong>Subcategory:</strong> {subCategory || 'N/A'}</p>
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
-        ) : action.includes("asset disposal") ? (
+        ) : action.includes('asset disposal') ? (
           <>
-            <p><strong>Item:</strong> {itemName || itemNames?.join(", ") || "N/A"}</p>
+            <p><strong>Item:</strong> {itemName || itemNames?.join(', ') || 'N/A'}</p>
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
-        ) : action.includes("condition changed") ? (
+        ) : action.includes('condition changed') ? (
           <>
-            <p><strong>Item:</strong> {itemName || itemNames?.join(", ") || "N/A"}</p>
-            <p><strong>Returned From:</strong> {location || "N/A"}</p>
-            <p><strong>Initial Condition:</strong> {condition || "N/A"}</p>
-            <p><strong>Changed Condition:</strong> {changedCondition || "N/A"}</p>
+            <p><strong>Item:</strong> {itemName || itemNames?.join(', ') || 'N/A'}</p>
+            <p><strong>Returned From:</strong> {location || 'N/A'}</p>
+            <p><strong>Initial Condition:</strong> {condition || 'N/A'}</p>
+            <p><strong>Changed Condition:</strong> {changedCondition || 'N/A'}</p>
           </>
         ) : (
           <>
-            <p><strong>Item:</strong> {itemName || itemNames?.join(", ") || subCategory || "N/A"}</p>
+            <p><strong>Item:</strong> {itemName || itemNames?.join(', ') || subCategory || 'N/A'}</p>
             {quantity && <p><strong>Quantity:</strong> {quantity}</p>}
             {location && <p><strong>Location:</strong> {location}</p>}
             {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
           </>
         )}
 
-        {(action.includes("rejected") || action.includes("cancelled") || action.includes("rejected by HOO")) ? (
+        {(action.includes('rejected') || action.includes('cancelled') || action.includes('rejected by HOO')) && (
           <button
-            className='update-button'
+            className="update-button"
             onClick={async () => {
               await handleClearNotification(_id);
-
-              let tab = "";
-              if (action.includes("building maintenance")) tab = "service";
-              else if (action.includes("building upgrade")) tab = "building-upgrade";
-              else if (action.includes("building disposal")) tab = "disposable";
-              else if (action.includes("return")) tab = "returned";
-              else if (action.includes("issue")) {
+              let tab = NOTIFICATION_TABS[action.split(' ')[0]] || 'returned';
+              if (action.includes('issue')) {
                 window.location.href = `/assetissue?username=${encodeURIComponent(username)}&rejectedId=${rejectedAssetId || _id}&assetType=${assetType}`;
                 return;
               }
-              else if (action.includes("service")) tab = "assetstore";
-              else if (action.includes("updation")) {
-                window.location.href = `/entrystaffassetupdation?username=${encodeURIComponent(username)}&rejectedId=${rejectedAssetId || _id}&assetType=${assetType}`;
+              if (action.includes('updation')) {
+                window.location.href = `/storekeeperassetupdation?username=${encodeURIComponent(username)}&rejectedId=${rejectedAssetId || _id}&assetType=${assetType}`;
                 return;
-              }              
-
+              }
               window.location.href = `/assetstore?username=${encodeURIComponent(username)}&rejectedId=${rejectedAssetId || _id}&tab=${tab}`;
             }}
           >
             Update
           </button>
-        ) : null}
+        )}
       </div>
     );
+  };
+
+  // Styles from PrincipalDashboard
+  const styles = {
+    section: {
+      padding: '5rem 0',
+      width: '100%',
+      boxSizing: 'border-box',
+    },
+    sectionContainer: {
+      maxWidth: '1100px',
+      margin: '0 auto',
+      padding: '0 1rem',
+      width: '100%',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      textAlign: 'center',
+      fontSize: '2.5rem',
+      fontWeight: 700,
+      color: '#2c3e50',
+      marginBottom: '3rem',
+      position: 'relative',
+    },
+    sectionTitleLine: {
+      position: 'absolute',
+      bottom: '-1rem',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '80px',
+      height: '4px',
+      background: '#2e7d32',
+      borderRadius: '2px',
+    },
+    aboutContent: {
+      display: 'flex',
+      flexDirection: windowWidth <= 768 ? 'column' : 'row',
+      gap: '3rem',
+      alignItems: 'center',
+    },
+    aboutImage: {
+      flex: 1,
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+      width: '100%',
+    },
+    aboutText: {
+      flex: 1,
+    },
+    aboutParagraph: {
+      fontSize: '1.1rem',
+      color: '#555',
+      marginBottom: '1.5rem',
+      lineHeight: 1.8,
+      textAlign: 'justify',
+    },
+    historyContent: {
+      display: 'flex',
+      flexDirection: windowWidth <= 768 ? 'column' : 'row',
+      gap: '3rem',
+    },
+    historyMain: {
+      flex: 2,
+    },
+    historyImages: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1.5rem',
+    },
+    historyImage: {
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    },
+    subsectionTitle: {
+      fontSize: '1.8rem',
+      fontWeight: 600,
+      color: '#2c3e50',
+      margin: '2rem 0 1rem',
+    },
+    listItem: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.5rem',
+      fontSize: '1.1rem',
+      color: '#555',
+      marginBottom: '1.5rem',
+      lineHeight: 1.8,
+      textAlign: 'justify',
+    },
+    listIcon: {
+      color: '#2e7d32',
+      marginTop: '0.3rem',
+    },
+    reachContent: {
+      display: 'flex',
+      flexDirection: windowWidth <= 768 ? 'column' : 'row',
+      gap: '3rem',
+      alignItems: 'center',
+    },
+    reachMap: {
+      flex: 1,
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+      height: '400px',
+    },
+    reachText: {
+      flex: 1,
+    },
+    contactGrid: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '2rem',
+      width: '100%',
+    },
+    contactCard: {
+      background: 'white',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      maxWidth: '600px',
+      width: '100%',
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
+    contactHeader: {
+      background: '#2e7d32',
+      color: 'white',
+      padding: '1.5rem',
+      textAlign: 'center',
+    },
+    contactBody: {
+      padding: '1.5rem',
+    },
+    contactItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
+      marginBottom: '1.5rem',
+    },
+    contactIcon: {
+      fontSize: '1.2rem',
+      color: '#2e7d32',
+    },
+    usernameContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      fontSize: '14px',
+      color: '#555',
+    },
+    userIcon: {
+      fontSize: '30px',
+      color: '#007BFF',
+    },
+    username: {
+      fontWeight: 'bold',
+      fontSize: '18px',
+    },
   };
 
   return (
@@ -331,7 +477,7 @@ const StorekeeperDashboard = () => {
           </li>
           <li>
             <a href={`/storekeeperassetupdation?username=${encodeURIComponent(username)}`}>
-              <i className="bx bxs-reply" />
+              <i className="bx bxs-edit" />
               <span className="text">Asset Updation</span>
             </a>
           </li>
@@ -355,10 +501,9 @@ const StorekeeperDashboard = () => {
       {/* Main Content */}
       <section id="content">
         <nav>
-          <i className="bx bx-menu" />
-          <span className="head-title">Dashboard</span>
-          <form action="#"><div className="form-input"></div></form>
-
+          <form action="#">
+            <div className="form-input"></div>
+          </form>
           <div className="nav-right-container">
             <div className="notification-icon-container">
               <i className="fas fa-bell bell-icon" onClick={toggleNotificationPanel} />
@@ -366,9 +511,9 @@ const StorekeeperDashboard = () => {
                 <span className="notification-badge">{notifications.length}</span>
               )}
             </div>
-            <div className="username-container">
-              <i className="bx bxs-user-circle user-icon" />
-              <span className="username">{username}</span>
+            <div style={styles.usernameContainer}>
+              <i className="bx bxs-user-circle" style={styles.userIcon}></i>
+              <span style={styles.username}>{username}</span>
             </div>
           </div>
         </nav>
@@ -378,144 +523,202 @@ const StorekeeperDashboard = () => {
           <section className="hero-section">
             <div className="hero-overlay" />
             <div className="hero-content">
-              <br></br>
-              <br></br>
-              <p>Central Academy for State Forest Service - Asset Management System</p>
+              <br />
+              <br />
+              <p>Central Academy for State Forest Service - Storekeeper Dashboard</p>
             </div>
           </section>
-          <section id="about" className="content-section">
-            <div className="section-container">
-              <h2 className="section-title">About Us</h2>
-              <div className="about-content">
-                <div className="about-text">
-                  <p>
-                    The Central Academy for State Forest Service, Coimbatore (erstwhile State Forest Service College) is a premier institution under the Directorate of Forest Education, Ministry of Environment, Forests, and Climate Change. It imparts professional training to newly recruited Range Forest Officers (RFOs) and in-service training to State Forest Service Officers at ACF and DCF ranks.
+
+          {/* About Section */}
+          <section id="about" style={styles.section}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  About Us
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
+              </div>
+              <div style={styles.aboutContent}>
+                <div style={styles.aboutText}>
+                  <p style={styles.aboutParagraph}>
+                    The Central Academy for State Forest Service (CASFOS), Coimbatore is one of
+                    the premier institutions under the aegis of Directorate of Forest
+                    Education, Ministry of Environment, Forest and Climate Change,
+                    Dehradun which imparts Professional Induction Training to the
+                    newly recruited State Forest Officers (ACF) and Forest Range
+                    Officers (FRO) from various States and offers In-Service Training
+                    to the State Forest Service Officers of DCF, ACF, and FRO ranks.
                   </p>
-                  <p>
-                    Established on January 25, 1980, the Academy was created to meet the growing demand for trained forest officers, spurred by Social Forestry Projects during the IV and V Five-Year Plans. Previously, officers were trained at the Indian Forest College, Dehradun, and Burnihat. CASFOS Coimbatore continues to uphold excellence in forestry education.
-                  </p>
-                  <p className="update-info">
-                  </p>
-                </div>
-                <div className="about-image">
                   <img
                     src="/images/casfos_vana_vigyan.png"
-                    alt="CASFOS Emblem"
-                    className="section-image"
+                    alt="CASFOS"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
                     onError={(e) => (e.target.src = '/images/fallback.jpg')}
                   />
+                  <br />
+                  <p style={styles.aboutParagraph}>
+                    It also conducts General Awareness & Capacity building courses/workshops for other stakeholders on the importance of Forests, Forest Policy, and Law to facilitate smooth interaction between Forest and other departments.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    The Academy was set up in the year 1980. Prior to this, the
+                    State Forest Service Officers were trained at the
+                    erstwhile Indian Forest College, Dehradun and State Forest Service
+                    College, Burnihat.
+                  </p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* History Section */}
-          <section id="history" className="content-section alt-bg">
-            <div className="section-container">
-              <h2 className="section-title">History of the Academy</h2>
-              <div className="history-content">
-                <div className="history-text">
-                  <p>
-                    CASFOS Coimbatore is a cornerstone of forestry education, offering professional training to State Forest Officers (ACF, FRO) and workshops on forest policy, wildlife, and environmental conservation.
+          <section id="history" style={{ ...styles.section, backgroundColor: '#f5f5f5' }}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  History of the Academy
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
+              </div>
+              <div style={styles.historyContent}>
+                <div style={styles.historyMain}>
+                  <h3 style={styles.subsectionTitle}>Genesis of Forest Training in Coimbatore</h3>
+                  <p style={styles.aboutParagraph}>
+                    It is interesting to note that CASFOS Coimbatore played a major role in forestry education and training in South India. The Forestry Education commenced in India in 1867, based on the recommendation of Sir Dietrich Brandis, the First Inspector General of Forests. A Forest school was set up to train Rangers and Foresters at Dehradun in the year 1878 by the then North West Province which was later taken over by the Government of India and designated as the Imperial Forest College.
                   </p>
-                  <h3 className="subsection-title">Mandate</h3>
-                  <ul className="mandate-list">
-                    <li>Deliver professional training to prepare officers for forestry challenges.</li>
-                    <li>Enhance management skills through in-service courses.</li>
-                    <li>Conduct workshops on emerging forestry research and technology.</li>
-                    <li>Align forest education with ecological and environmental standards.</li>
+                  <p style={styles.aboutParagraph}>
+                    Next milestone in Forestry Education in India was the establishment of Madras Forest College at Coimbatore in the year 1912 by the then Madras Presidency with Mr. F. L. C. Cowley Brown, IFS, as its first Principal. Mr. F. A. Lodge, then Conservator of Forests in Coimbatore was instrumental in the establishment of this College. It was the second Forest Rangers College in India, after DehraDun. It was set up to meet the rising demand of trained Foresters in the country, especially those from South India.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    During the Second World War, the Madras Forest College was closed down and was revived in 1945 by Mr. C. R. Ranganathan, IFS, as its first Indian Principal. It was taken over by the Government of India in 1948 to train more number of Forest Ranger Trainees as the demand was going up after Independence.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    The historic Forest Campus that housed the MFC later became the “Southern Forest Rangers College” (SFRC) in the year 1955. Under the aegis of Government of India, 31 batches of Forest Rangers passed out from the SFRC after completing rigorous training of two years. SFRC has trained more than 4000 Forest Ranger officers between 1912 and 1988. The trainees included not only Indians but also from Ceylon, Afghanistan, Uganda, Malaya, Ghana, Fiji, Laos, Sierra Leone, British Guyana, etc.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    Due to policy decision of the Government of India, that imparting Induction and In-service Training to the Forestry Personnel below the rank of Assistant Conservator of Forests should rest with the State Government, the training activities came to an end on 31.12.1987 in the Southern Forest Rangers College.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    State Forest Service Officers were trained at the College, erstwhile Indian Forest College, Dehradun and State Forest Service College, Burnihat. With the advent of various developmental schemes in the Forestry sector during the IV and V Five year plans, and launching of the Social Forestry Projects in many States, the Government of India felt the urgency of starting two more institutions to train the increasing number of officers specially from the State Services, and as a sequel to this the State Forest Service College, Coimbatore was established on 25th January, 1980 under the aegis of Directorate of Forest Education, Ministry of Environment & Forests. Later it was rechristened as Central Academy for State Forest Service (CASFOS).
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    CASFOS Coimbatore was brought under the single administrative control of Director, IGNFA, Dehradun along with the other Academies as integration of all Forest Training Academies under a single command. (Vide order no. 15-15/2018-RT, dated 03-02-2022)
+                  </p>
+                  <h3 style={styles.subsectionTitle}>Mandate</h3>
+                  <ul style={{ listStyle: 'none', padding: 0 }}>
+                    {[
+                      'To impart Professional training to the newly recruited State Forest Service officers and to bring them up as capable of meeting future challenges in the sphere of Forests, Wildlife & Environment through Capacity building & Knowledge sharing',
+                      'Strengthening existing management process and disseminating new concepts through continued education, in the shape of In-service Courses to augment their managerial skills with administrative & technical acumen.',
+                      'Conducting Special & Theme based Workshops and Refresher Courses covering emerging issues in forestry research and technology.',
+                      'Re-orienting forest education in tune with requisite parameters of ecology and environment.'
+                    ].map((item, index) => (
+                      <li key={index} style={styles.listItem}>
+                        <span style={styles.listIcon}>✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
-                  <h3 className="subsection-title">Genesis of Forest Training</h3>
-                  <p>
-                    Forestry education in India began in 1867, with a forest school established in Dehradun (1878). The Madras Forest College, founded in Coimbatore in 1912, was the second Rangers College, training foresters for South India. Revived in 1945 and renamed the Southern Forest Rangers College (SFRC) in 1955, it trained over 4,000 rangers until 1987. CASFOS Coimbatore was established in 1980 and integrated under IGNFA in 2022.
-                  </p>
                 </div>
-                <div className="history-images">
-                  <img
-                    src="/images/casfos_coimbatore_img4.jpg"
-                    alt="Historical Campus"
-                    className="section-image"
-                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
-                  />
-                  <img
-                    src="/images/casfos_coimbatore_img5.jpg"
-                    alt="Forest Campus"
-                    className="section-image"
-                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
-                  />
-                  <img
-                    src="/images/casfos_coimbatore_img3.jpg"
-                    alt="Training Facility"
-                    className="section-image"
-                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
-                  />
-                </div>
-                <div className="history-text-continued">
-                  <p className="update-info">
-                  </p>
-                </div>
+                
               </div>
             </div>
           </section>
 
-          {/* Reach Section */}
-          <section id="reach" className="content-section">
-            <div className="section-container">
-              <h2 className="section-title">How to Reach</h2>
-              <div className="reach-content">
-                <div className="reach-text">
-                  <p>
-                    Located in the scenic Forest Campus, R.S. Puram, Coimbatore, Tamil Nadu, CASFOS is 5 km from Coimbatore Railway Station and 12 km from Coimbatore International Airport.
-                  </p>
-                  <p>
-                    The campus hosts the Tamil Nadu Forest Academy (TNFA), the Institute of Forest Genetics & Tree Breeding (IFGTB), and the renowned GASS Museum, making it a hub for forestry education and research.
-                  </p>
-                </div>
-                <div className="map-container">
-                  <iframe
-                    src="http://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.2649732361087!2d76.93796778831465!3d11.018735325854964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba858dde76380d3%3A0xbe08bb837838e990!2sCentral%20Academy%20for%20State%20Forest%20Service!5e0!3m2!1sen!2sin!4v1744637852810!5m2!1sen!2sin"
-                    width="600"
-                    height="450"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+          {/* How to Reach Section */}
+          <section id="reach" style={styles.section}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  How To Reach
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
+              </div>
+              <div style={{
+                backgroundColor: '#e8f5e9',
+                borderRadius: '8px',
+                padding: '2rem',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={styles.reachContent}>
+                  <div style={styles.reachText}>
+                    <p style={styles.aboutParagraph}>
+                      Setup in the picturesque Forest Campus, R. S. Puram, Coimbatore,
+                      Tamil Nadu, the Central Academy for State Forest Service is
+                      situated at a distance of 5 km from the Coimbatore Railway Station
+                      and 12 Km from Coimbatore International Airport.
+                    </p>
+                    <div style={{
+                      backgroundColor: 'white',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      borderLeft: '4px solid #2e7d32'
+                    }}>
+                      <h4 style={{ fontWeight: 600, color: '#2c3e50', marginBottom: '1rem' }}>
+                        Location Highlights:
+                      </h4>
+                      <ul style={{ listStyle: 'none', padding: 0 }}>
+                        <li style={styles.listItem}>• Tamil Nadu Forest Academy (TNFA)</li>
+                        <li style={styles.listItem}>• Institute of Forest Genetics & Tree breeding (IFGTB)</li>
+                        <li style={styles.listItem}>• Famous 'GASS MUSEUM'</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div style={styles.reachMap}>
+                    <iframe
+                      src="http://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.2649732361087!2d76.93796778831465!3d11.018735325854964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba858dde76380d3%3A0xbe08bb837838e990!2sCentral%20Academy%20for%20State%20Forest%20Service!5e0!3m2!1sen!2sin!4v1744637852810!5m2!1sen!2sin"
+                      width="600"
+                      height="450"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
           {/* Contact Section */}
-          <section id="contact" className="content-section alt-bg">
-            <div className="section-container">
-              <h2 className="section-title">Contact Us</h2>
-              <div className="contact-content">
-                <div className="contact-card">
-                  <h3 className="contact-heading">
-                    Central Academy for State Forest Service <br />
-                    Directorate of Forest Education <br />
-                    Ministry of Environment, Forest and Climate Change <br />
-                    Government of India
-                  </h3>
-                  <div className="contact-info">
-                    <div className="contact-item">
-                      <i className="bx bx-envelope" />
-                      <p>
-                        <strong>Email:</strong> casfos-coimbatore@gov.in | casfoscbe-trng@gov.in
-                      </p>
+          <section id="contact" style={{ ...styles.section, backgroundColor: '#f5f5f5' }}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  Contact Us
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
+              </div>
+              <div style={styles.contactGrid}>
+                <div style={styles.contactCard}>
+                  <div style={styles.contactHeader}>
+                    <h3 style={{ margin: 0 }}>The Principal,</h3>
+                    <h3 style={{ margin: 0 }}>Central Academy for State Forest Service Coimbatore,</h3>
+                    <h3 style={{ margin: 0 }}>Directorate of Forest Education,</h3>
+                    <h3 style={{ margin: 0 }}>Ministry of Environment, Forest and Climate Change,</h3>
+                    <h3 style={{ margin: 0 }}>Government of India</h3>
+                  </div>
+                  <div style={styles.contactBody}>
+                    <div style={styles.contactItem}>
+                      <FiMail style={styles.contactIcon} />
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0' }}>Email</h4>
+                        <p style={{ margin: 0 }}>casfos-coimbatore@gov.in</p>
+                        <p style={{ margin: '0.3rem 0 0 0' }}>casfoscbe-trng@gov.in</p>
+                      </div>
                     </div>
-                    <div className="contact-item">
-                      <i className="bx bx-phone" />
-                      <p>
-                        <strong>Phone:</strong> 0422-2450313
-                      </p>
+                    <div style={styles.contactItem}>
+                      <FiPhone style={styles.contactIcon} />
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0' }}>Phone</h4>
+                        <p style={{ margin: 0 }}>0422-2450313</p>
+                      </div>
                     </div>
-                    <div className="contact-item">
-                      <i className="bx bx-map" />
-                      <p>
-                        <strong>Address:</strong> Forest Campus, R.S. Puram, Coimbatore - 641002, Tamil Nadu
-                      </p>
+                    <div style={styles.contactItem}>
+                      <FiMapPin style={styles.contactIcon} />
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0' }}>Address</h4>
+                        <p style={{ margin: 0 }}>Forest Campus, R. S. Puram</p>
+                        <p style={{ margin: '0.3rem 0 0 0' }}>Coimbatore, Tamil Nadu - 641002</p>
+                      </div>
                     </div>
                   </div>
                 </div>

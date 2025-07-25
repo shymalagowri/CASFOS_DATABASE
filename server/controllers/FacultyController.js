@@ -5,13 +5,11 @@ const AutoSaveFaculty = require('../model/AutoSaveFaculty');  // Auto-saved facu
 const RejectedFaculty = require('../model/RejectedFaculty');  // Rejected faculty records
 const NotifyFaculty = require('../model/NotifyFaculty');      // Faculty notification records
 
-// Save or update faculty data
 const saveFaculty = async (req, res) => {
-  //("Saving Faculty...");
   try {
     // Destructure request body
-    const { facultyType, _id, ...facultyData } = req.body;
-    const photographPath = req.file ? req.file.path : null; // Handle uploaded photograph
+    const { facultyType, _id, photograph, ...facultyData } = req.body;
+    const photographPath = req.file ? req.file.path : photograph; // Use uploaded file or existing path
 
     // Define fields that should be flat arrays
     const flatArrayFields = ["modulesHandled", "majorDomains", "minorDomains"];
@@ -68,27 +66,26 @@ const saveFaculty = async (req, res) => {
     const updatedFacultyData = {
       ...parsedFacultyData,
       facultyType,
-      photograph: photographPath,
       staffid: req.body.staffid || `FAC${Date.now()}`, // Generate unique staff ID if not provided
-      status: facultyData.status || "serving",         // Default status
-      conduct: facultyData.conduct || "",              // Default conduct
-      verified: facultyData.verified || false,         // Preserve or default verified status
+      status: facultyData.status || "serving", // Default status
+      conduct: facultyData.conduct || "", // Default conduct
+      verified: facultyData.verified || false, // Preserve or default verified status
     };
-    //("Processed faculty data:", updatedFacultyData);
 
     // Check for existing autosaved data
     const { name, mobileNumber } = facultyData;
     const existingFaculty = await AutoSaveFaculty.findOne({ name, mobileNumber });
 
     if (existingFaculty) {
-      //("Existing autosaved faculty found. Deleting...");
       await AutoSaveFaculty.deleteOne({ staffid: existingFaculty.staffid });
-      //("Deleted autosaved faculty.");
     }
 
     if (!_id) {
       // Create new faculty record
-      const newFaculty = new Faculty(updatedFacultyData);
+      const newFaculty = new Faculty({
+        ...updatedFacultyData,
+        photograph: photographPath, // For new records, use photographPath directly
+      });
       await newFaculty.save();
       return res.status(201).send({
         success: true,
@@ -97,23 +94,30 @@ const saveFaculty = async (req, res) => {
       });
     } else {
       // Update existing faculty record
-      //("Updating existing faculty with ID:", _id);
+      let existingRecord = await Faculty.findById(_id) || await ConfirmedFaculty.findById(_id);
+      if (!existingRecord) {
+        return res.status(404).send({ success: false, message: "Faculty not found for update" });
+      }
+
+      // Set photograph field: use new file if uploaded, existing path if provided, or retain existing
+      if (req.file) {
+        updatedFacultyData.photograph = photographPath; // New file uploaded
+      } else {
+        updatedFacultyData.photograph = photograph || existingRecord.photograph; // Use provided path or existing
+      }
+
       let updatedFaculty = await Faculty.findByIdAndUpdate(_id, updatedFacultyData, { new: true });
       if (!updatedFaculty) {
-        //("Faculty not found in Faculty collection, checking ConfirmedFaculty...");
-        updatedFaculty = await ConfirmedFaculty.findByIdAndUpdate(_id, updatedFacultyData, { new: true });
+        updatedFaculty = await ConfirmedFaculty.findByIdAndUpdate(_id, updatedFacultyData, {  new: true });
         if (!updatedFaculty) {
-          //("Faculty not found for ID:", _id);
           return res.status(404).send({ success: false, message: "Faculty not found for update" });
         }
-        //("Faculty updated successfully in ConfirmedFaculty:", updatedFaculty);
         return res.status(200).send({
           success: true,
           message: "Faculty updated successfully in ConfirmedFaculty!",
           data: updatedFaculty,
         });
       }
-      //("Faculty updated successfully in Faculty:", updatedFaculty);
       return res.status(200).send({
         success: true,
         message: "Faculty updated successfully!",
@@ -129,6 +133,7 @@ const saveFaculty = async (req, res) => {
     });
   }
 };
+
 
 // Retrieve autosaved faculty data by staff ID
 const getAutoSavedFacultyData = async (req, res) => {

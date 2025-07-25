@@ -231,26 +231,29 @@ const FacultyView = () => {
    */
   const renderPopupContent = (data) => {
     const renderValue = (value, key) => {
-      if (key === "photograph" && typeof value === "string") { // Handles photograph field
-        const imageUrl = `http://${ip}:${port}/Uploads/${value.split("\\").pop()}`; // Constructs image URL
-        return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "5px" }} />; // Renders image
+      if (key === "status" && value === "retired") {
+        return "Repatriated";
+      }
+      if (key === "photograph" && typeof value === "string") { 
+        const imageUrl = `http://${ip}:${port}/Uploads/${value.split("\\").pop()}`;
+        return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "5px" }} />; 
       }
 
-      if (Array.isArray(value)) { // Handles arrays
+      if (Array.isArray(value)) { 
         return (
           <ul>
             {value.map((item, index) => (
-              <li key={index}>{renderValue(item, key)}</li> // Recursively renders array items
+              <li key={index}>{renderValue(item, key)}</li> 
             ))}
           </ul>
         );
       }
 
-      if (typeof value === "object" && value !== null) { // Handles nested objects
+      if (typeof value === "object" && value !== null) {
         return (
           <ul>
             {Object.entries(value)
-              .filter(([key]) => key !== "_id") // Excludes _id
+              .filter(([key]) => key !== "_id") 
               .map(([key, val]) => (
                 <li key={key}>
                   <strong>{key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}:</strong> {renderValue(val, key)} // Renders key-value pair
@@ -260,17 +263,17 @@ const FacultyView = () => {
         );
       }
 
-      return value?.toString() || "-"; // Converts value to string or shows "-"
+      return value?.toString() || "-";
     };
 
     return Object.entries(data)
-      .filter(([key]) => key !== "_id" && key !== "conduct") // Excludes _id and conduct
+      .filter(([key]) => key !== "_id" && key !== "conduct") 
       .map(([key, value]) => (
         <tr key={key}>
           <td style={{ fontWeight: "bold", padding: "10px", border: "1px solid #ddd" }}>
-            {key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}: // Formats key
+            {key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}: 
           </td>
-          <td style={{ padding: "10px", border: "1px solid #ddd" }}>{renderValue(value, key)}</td> // Renders value
+          <td style={{ padding: "10px", border: "1px solid #ddd" }}>{renderValue(value, key)}</td> 
         </tr>
       ));
   };
@@ -722,7 +725,7 @@ const FacultyView = () => {
                     >
                       <option value="">All</option> {/* Default option */}
                       <option value="serving">Serving</option>
-                      <option value="retired">Retired</option>
+                      <option value="retired">Repatriated</option>
                     </select>
                   </div>
                   <div style={filterStyles.filterItem}> {/* Modules Handled filter */}

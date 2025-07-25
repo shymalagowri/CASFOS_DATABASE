@@ -2,422 +2,660 @@
  * AssetManagerDashboard.jsx
  * 
  * This React component serves as the main dashboard for an asset manager in the Central Academy for State Forest Service (CASFOS) Asset Management System.
- * It provides a comprehensive interface displaying notifications, analytics, and institutional information.
+ * It provides a comprehensive interface displaying institutional information and navigation for asset management tasks.
  * Features:
- * - Displays real-time notifications (e.g., asset approvals, rejections) with expand/collapse and clear options.
- * - Includes charts for asset data (permanent, consumable, issued), faculty sessions, and user counts, filterable by year and location.
- * - Features a sidebar for navigation, a hero section, and informational sections about the academy's history, location, and contact details.
- * - Uses Axios for API calls, React Router for navigation, and Helmet for meta tags and external styles.
+ * - A sidebar for navigation to asset approval, updation, and view sections.
+ * - Static sections for About Us, History, How to Reach, and Contact Us, showcasing institutional information, styled consistently with PrincipalDashboard.
+ * - A hero section highlighting the institution's role.
+ * - Responsive design with a modern UI, using external CSS (dashstyle.css, style.css) and inline styles for consistency.
+ * - Placeholder for a notification system (commented out) to align with potential future integration.
+ * 
+ * The component uses React Router for URL parameter parsing and Helmet for SEO and metadata.
+ * Note: Notification and chart features are not implemented in this version but can be added by uncommenting and configuring the placeholder code.
  * 
  * @returns {JSX.Element} The AssetManagerDashboard component
  */
 
-// -------------------
-// Imports
-// -------------------
-import React, { useEffect, useState } from "react"; // Imports React and hooks for state and lifecycle management
-import { Helmet } from "react-helmet"; // Imports Helmet for managing document head (meta tags, styles)
-import "../styles/Style.css"; // Imports local stylesheet for component styling
-import axios from "axios"; // Imports Axios for making HTTP requests to the backend
-import { useLocation } from "react-router-dom"; // Imports useLocation for accessing URL query parameters
+import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { useLocation } from 'react-router-dom';
+import { FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
+import '../styles/DashStyle.css';
 
-// -------------------
-// Main Component
-// -------------------
-/**
- * Dashboard component for asset managers
- * @returns {JSX.Element}
- */
 const AssetManagerDashboard = () => {
-  // Extracts query parameters from the URL
-  const location = useLocation(); // Gets the current location object from React Router
-  const queryParams = new URLSearchParams(location.search); // Parses query parameters from the URL
-  const username = queryParams.get("username") || "Guest"; // Retrieves username from query params, defaults to "Guest"
+  // State management
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // Returns the JSX structure for the dashboard
+  // Router and URL params
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const username = queryParams.get('username') || 'Guest';
+
+  // Window Resize Handler
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Placeholder for notification system (uncomment and configure if needed)
+  /*
+  const port = import.meta.env.VITE_API_PORT;
+  const ip = import.meta.env.VITE_API_IP;
+  const [notifications, setNotifications] = useState([]);
+  const [expandedNotification, setExpandedNotification] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const serverBaseUrl = `http://${ip}:${port}`;
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get(`${serverBaseUrl}/api/assets/get-asset-notification`);
+        const sortedNotifications = response.data
+          .sort((a, b) => new Date(b.actionTime) - new Date(a.actionTime))
+          .slice(0, 50);
+        setNotifications(sortedNotifications);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+    fetchNotifications();
+  }, []);
+
+  const handleClearNotification = async (id) => {
+    try {
+      await axios.delete(`${serverBaseUrl}/api/assets/delete-asset-notification/${id}`);
+      setNotifications(notifications.filter((notif) => notif._id !== id));
+      if (expandedNotification === id) {
+        setExpandedNotification(null);
+      }
+    } catch (error) {
+      console.error('Error clearing notification:', error);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await axios.delete(`${serverBaseUrl}/api/assets/delete-asset-notification/all`);
+      setNotifications([]);
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+    }
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedNotification(expandedNotification === id ? null : id);
+  };
+
+  const toggleNotificationPanel = () => {
+    setShowNotifications(!showNotifications);
+  };
+
+  const formatNotificationTitle = (notification) => {
+    const { action, assetCategory, itemNames, subCategory } = notification;
+    const itemName = itemNames?.[0] || subCategory || assetCategory || 'item';
+    switch (action) {
+      case 'asset approved':
+        return `Asset Manager approved purchased ${assetCategory || 'assets'}`;
+      case 'asset rejected':
+        return `Asset Manager rejected ${itemName} purchase`;
+      case 'issue approved':
+        return `Asset Manager approved issuing ${itemName}`;
+      case 'issue rejected':
+        return `Asset Manager rejected issuing ${itemName}`;
+      case 'return approved for service':
+        return `Asset Manager approved ${itemName} for service`;
+      case 'return approved for disposal':
+        return `Asset Manager approved ${itemName} for disposal`;
+      case 'return rejected':
+        return `Asset Manager rejected ${itemName} return`;
+      default:
+        return `${action} - ${assetCategory || 'Unknown'}`;
+    }
+  };
+
+  const renderNotificationDetails = (notification) => {
+    const { action, supplierName, purchaseDate, billNo, receivedBy, itemNames, subCategory, quantity, location, rejectionRemarks, actionTime } = notification;
+    return (
+      <div className="notification-table">
+        <p><strong>Action Time:</strong> {new Date(actionTime).toLocaleString()}</p>
+        {action.includes('asset') && (
+          <>
+            <p><strong>Supplier Name:</strong> {supplierName || 'N/A'}</p>
+            <p><strong>Purchase Date:</strong> {purchaseDate ? new Date(purchaseDate).toLocaleDateString() : 'N/A'}</p>
+            <p><strong>Bill No:</strong> {billNo || 'N/A'}</p>
+            <p><strong>Received By:</strong> {receivedBy || 'N/A'}</p>
+          </>
+        )}
+        <p><strong>Items:</strong> {itemNames?.join(', ') || subCategory || 'N/A'}</p>
+        {quantity && <p><strong>Quantity:</strong> {quantity}</p>}
+        {location && <p><strong>Location:</strong> {location}</p>}
+        {rejectionRemarks && <p><strong>Remarks:</strong> {rejectionRemarks}</p>}
+      </div>
+    );
+  };
+  */
+
+  // Styles from PrincipalDashboard
+  const styles = {
+    section: {
+      padding: '5rem 0',
+      width: '100%',
+      boxSizing: 'border-box',
+    },
+    sectionContainer: {
+      maxWidth: '1100px',
+      margin: '0 auto',
+      padding: '0 1rem',
+      width: '100%',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
+    sectionTitle: {
+      textAlign: 'center',
+      fontSize: '2.5rem',
+      fontWeight: 700,
+      color: '#2c3e50',
+      marginBottom: '3rem',
+      position: 'relative',
+    },
+    sectionTitleLine: {
+      position: 'absolute',
+      bottom: '-1rem',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '80px',
+      height: '4px',
+      background: '#2e7d32',
+      borderRadius: '2px',
+    },
+    aboutContent: {
+      display: 'flex',
+      flexDirection: windowWidth <= 768 ? 'column' : 'row',
+      gap: '3rem',
+      alignItems: 'center',
+    },
+    aboutImage: {
+      flex: 1,
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+      width: '100%',
+    },
+    aboutText: {
+      flex: 1,
+    },
+    aboutParagraph: {
+      fontSize: '1.1rem',
+      color: '#555',
+      marginBottom: '1.5rem',
+      lineHeight: 1.8,
+      textAlign: 'justify',
+    },
+    historyContent: {
+      display: 'flex',
+      flexDirection: windowWidth <= 768 ? 'column' : 'row',
+      gap: '3rem',
+    },
+    historyMain: {
+      flex: 2,
+    },
+    historyImages: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1.5rem',
+    },
+    historyImage: {
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    },
+    subsectionTitle: {
+      fontSize: '1.8rem',
+      fontWeight: 600,
+      color: '#2c3e50',
+      margin: '2rem 0 1rem',
+    },
+    listItem: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.5rem',
+      fontSize: '1.1rem',
+      color: '#555',
+      marginBottom: '1.5rem',
+      lineHeight: 1.8,
+      textAlign: 'justify',
+    },
+    listIcon: {
+      color: '#2e7d32',
+      marginTop: '0.3rem',
+    },
+    reachContent: {
+      display: 'flex',
+      flexDirection: windowWidth <= 768 ? 'column' : 'row',
+      gap: '3rem',
+      alignItems: 'center',
+    },
+    reachMap: {
+      flex: 1,
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+      height: '400px',
+    },
+    reachText: {
+      flex: 1,
+    },
+    contactGrid: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '2rem',
+      width: '100%',
+    },
+    contactCard: {
+      background: 'white',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+      maxWidth: '600px',
+      width: '100%',
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
+    contactHeader: {
+      background: '#2e7d32',
+      color: 'white',
+      padding: '1.5rem',
+      textAlign: 'center',
+    },
+    contactBody: {
+      padding: '1.5rem',
+    },
+    contactItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
+      marginBottom: '1.5rem',
+    },
+    contactIcon: {
+      fontSize: '1.2rem',
+      color: '#2e7d32',
+    },
+    usernameContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      fontSize: '14px',
+      color: '#555',
+    },
+    userIcon: {
+      fontSize: '30px',
+      color: '#007BFF',
+    },
+    username: {
+      fontWeight: 'bold',
+      fontSize: '18px',
+    },
+  };
+
   return (
-    <>
-      {/* Fragment to group multiple elements without adding extra DOM nodes */}
-      <div>
-        {/* Helmet manages document head for SEO and external resources */}
-        <Helmet>
-          <meta charSet="UTF-8" /> {/* Sets character encoding to UTF-8 */}
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" /> {/* Ensures responsive viewport scaling */}
-          <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" /> {/* Loads Boxicons for sidebar icons */}
-          <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" /> {/* Loads Font Awesome for additional icons */}
-          <link rel="stylesheet" href="style.css" /> {/* Loads local style.css (Note: may overlap with Style.css) */}
-          <title>CASFOS</title> {/* Sets the page title to "CASFOS" */}
-        </Helmet>
+    <div className="dashboard-container">
+      {/* SEO and Metadata */}
+      <Helmet>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="http://unpkg.com/boxicons@2.0.9/css/boxicons.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="/fontawesome/css/all.min.css" />
+        <link rel="stylesheet" href="/styles/Style.css" />
+        <title>CASFOS - Asset Manager Dashboard</title>
+      </Helmet>
 
-        {/* Sidebar section for navigation */}
-        <section id="sidebar">
-          <a href="#" className="brand"> {/* Brand link (currently a placeholder with #) */}
-            <span className="text">ASSET MANAGER</span> {/* Displays "ASSET MANAGER" as the brand name */}
-          </a>
-          <ul className="side-menu top"> {/* List of primary navigation links */}
-            <li className="active"> {/* Marks the Home link as active */}
-              <a href={`/assetmanagerdashboard?username=${encodeURIComponent(username)}`}> {/* Navigates to dashboard with username */}
-                <i className="bx bxs-dashboard" /> {/* Dashboard icon */}
-                <span className="text">Home</span> {/* Home link text */}
-              </a>
-            </li>
-            <li> {/* Asset Approval link */}
-              <a href={`/adminassetapproval?username=${encodeURIComponent(username)}`}> {/* Navigates to asset approval page */}
-                <i className="bx bxs-shopping-bag-alt" /> {/* Shopping bag icon */}
-                <span className="text">Asset Approval</span> {/* Approval link text */}
-              </a>
-            </li>
-            <li> {/* Asset Updation link */}
-              <a href={`/assetupdation?username=${encodeURIComponent(username)}`}> {/* Navigates to asset updation page */}
-                <i className="bx bxs-package" /> {/* Package icon */}
-                <span className="text">Asset Updation</span> {/* Updation link text */}
-              </a>
-            </li>
-            <li> {/* Asset View link */}
-              <a href={`/managerassetview?username=${encodeURIComponent(username)}`}> {/* Navigates to asset view page */}
-                <i className="bx bxs-reply" /> {/* Reply icon */}
-                <span className="text">Asset View</span> {/* View link text */}
-              </a>
-            </li>
-          </ul>
-          <ul className="side-menu"> {/* List for secondary navigation (logout) */}
-            <li> {/* Logout link */}
-              <a href="/login" className="logout"> {/* Navigates to login page */}
-                <i className="bx bxs-log-out-circle" /> {/* Logout icon */}
-                <span className="text">Logout</span> {/* Logout link text */}
-              </a>
-            </li>
-          </ul>
-        </section>
+      {/* Sidebar Navigation */}
+      <section id="sidebar">
+        <a href="#" className="brand">
+          <span className="text">ASSET MANAGER</span>
+        </a>
+        <ul className="side-menu top">
+          <li className="active">
+            <a href={`/assetmanagerdashboard?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-dashboard" />
+              <span className="text">Home</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/adminassetapproval?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-shopping-bag-alt" />
+              <span className="text">Asset Approval</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/assetupdation?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-package" />
+              <span className="text">Asset Updation</span>
+            </a>
+          </li>
+          <li>
+            <a href={`/managerassetview?username=${encodeURIComponent(username)}`}>
+              <i className="bx bxs-reply" />
+              <span className="text">Asset View</span>
+            </a>
+          </li>
+        </ul>
+        <ul className="side-menu">
+          <li>
+            <a href="/login" className="logout">
+              <i className="bx bxs-log-out-circle" />
+              <span className="text">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </section>
 
-        {/* Main content section */}
-        <section id="content">
-          <nav> {/* Navigation bar within content */}
-            <i className="bx bx-menu" /> {/* Menu icon (likely for toggling sidebar) */}
-            <span className="head-title">Dashboard</span> {/* Displays "Dashboard" as the page title */}
-            <form action="#"> {/* Placeholder form (currently empty) */}
-              <div className="form-input"></div> {/* Empty form input container */}
-            </form>
-            <div style={styles.usernameContainer}> {/* Container for username display */}
-              <i className="bx bxs-user-circle" style={styles.userIcon}></i> {/* User icon */}
-              <span style={styles.username}>{username}</span> {/* Displays the username */}
+      {/* Main Content */}
+      <section id="content">
+        <nav>
+          <form action="#">
+            <div className="form-input"></div>
+          </form>
+          <div className="nav-right-container">
+            {/* Placeholder for notification icon (uncomment if implemented) */}
+            {/*
+            <div className="notification-icon-container">
+              <i className="fas fa-bell bell-icon" onClick={toggleNotificationPanel} />
+              {notifications.length > 0 && (
+                <span className="notification-badge">{notifications.length}</span>
+              )}
             </div>
-          </nav>
+            */}
+            <div style={styles.usernameContainer}>
+              <i className="bx bxs-user-circle" style={styles.userIcon}></i>
+              <span style={styles.username}>{username}</span>
+            </div>
+          </div>
+        </nav>
 
-          <main className="main-content"> {/* Main content area */}
-            {/* Hero Section */}
-            <section className="hero-section"> {/* Hero section with overlay and content */}
-              <div className="hero-overlay" /> {/* Overlay for visual effect */}
-              <div className="hero-content"> {/* Content within hero section */}
-                <br></br> {/* Adds vertical spacing */}
-                <br></br> {/* Adds additional vertical spacing */}
-                <p>Central Academy for State Forest Service - Asset Management System</p> {/* Hero section description */}
+        <main className="main-content">
+          {/* Hero Section */}
+          <section className="hero-section">
+            <div className="hero-overlay" />
+            <div className="hero-content">
+              <br />
+              <br />
+              <p>Central Academy for State Forest Service - Asset Manager Dashboard</p>
+            </div>
+          </section>
+
+          {/* About Section */}
+          <section id="about" style={styles.section}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  About Us
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
               </div>
-            </section>
-
-            {/* About Us Section */}
-            <section id="about" className="content-section"> {/* About section */}
-              <div className="section-container"> {/* Container for section content */}
-                <h2 className="section-title">About Us</h2> {/* Section title */}
-                <div className="about-content"> {/* Content wrapper */}
-                  <div className="about-text"> {/* Text content */}
-                    <p> {/* Paragraph describing CASFOS */}
-                      The Central Academy for State Forest Service, Coimbatore (erstwhile State Forest Service College) is a premier institution under the Directorate of Forest Education, Ministry of Environment, Forests, and Climate Change. It imparts professional training to newly recruited Range Forest Officers (RFOs) and in-service training to State Forest Service Officers at ACF and DCF ranks.
-                    </p>
-                    <p> {/* Paragraph on establishment and history */}
-                      Established on January 25, 1980, the Academy was created to meet the growing demand for trained forest officers, spurred by Social Forestry Projects during the IV and V Five-Year Plans. Previously, officers were trained at the Indian Forest College, Dehradun, and Burnihat. CASFOS Coimbatore continues to uphold excellence in forestry education.
-                    </p>
-                    <p className="update-info"> {/* Placeholder for update information */}
-                    </p>
-                  </div>
-                  <div className="about-image"> {/* Image container */}
-                    <img
-                      src="/images/casfos_vana_vigyan.png" // Path to CASFOS emblem image
-                      alt="CASFOS Emblem" // Alt text for accessibility
-                      className="section-image" // Styling class
-                      onError={(e) => (e.target.src = '/images/fallback.jpg')} // Fallback image if loading fails
-                    />
-                  </div>
+              <div style={styles.aboutContent}>
+                <div style={styles.aboutText}>
+                  <p style={styles.aboutParagraph}>
+                    The Central Academy for State Forest Service (CASFOS), Coimbatore is one of
+                    the premier institutions under the aegis of Directorate of Forest
+                    Education, Ministry of Environment, Forest and Climate Change,
+                    Dehradun which imparts Professional Induction Training to the
+                    newly recruited State Forest Officers (ACF) and Forest Range
+                    Officers (FRO) from various States and offers In-Service Training
+                    to the State Forest Service Officers of DCF, ACF, and FRO ranks.
+                  </p>
+                  <img
+                    src="/images/casfos_vana_vigyan.png"
+                    alt="CASFOS"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                    onError={(e) => (e.target.src = '/images/fallback.jpg')}
+                  />
+                  <br />
+                  <p style={styles.aboutParagraph}>
+                    It also conducts General Awareness & Capacity building courses/workshops for other stakeholders on the importance of Forests, Forest Policy, and Law to facilitate smooth interaction between Forest and other departments.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    The Academy was set up in the year 1980. Prior to this, the
+                    State Forest Service Officers were trained at the
+                    erstwhile Indian Forest College, Dehradun and State Forest Service
+                    College, Burnihat.
+                  </p>
                 </div>
               </div>
-            </section>
+            </div>
+          </section>
 
-            {/* History Section */}
-            <section id="history" className="content-section alt-bg"> {/* History section with alternate background */}
-              <div className="section-container"> {/* Container for section content */}
-                <h2 className="section-title">History of the Academy</h2> {/* Section title */}
-                <div className="history-content"> {/* Content wrapper */}
-                  <div className="history-text"> {/* Text content */}
-                    <p> {/* Overview of CASFOS’s role */}
-                      CASFOS Coimbatore is a cornerstone of forestry education, offering professional training to State Forest Officers (ACF, FRO) and workshops on forest policy, wildlife, and environmental conservation.
-                    </p>
-                    <h3 className="subsection-title">Mandate</h3> {/* Subsection title for mandate */}
-                    <ul className="mandate-list"> {/* List of mandate items */}
-                      <li>Deliver professional training to prepare officers for forestry challenges.</li> {/* Mandate item */}
-                      <li>Enhance management skills through in-service courses.</li> {/* Mandate item */}
-                      <li>Conduct workshops on emerging forestry research and technology.</li> {/* Mandate item */}
-                      <li>Align forest education with ecological and environmental standards.</li> {/* Mandate item */}
-                    </ul>
-                    <h3 className="subsection-title">Genesis of Forest Training</h3> {/* Subsection title for history */}
-                    <p> {/* Historical context of forestry education */}
-                      Forestry education in India began in 1867, with a forest school established in Dehradun (1878). The Madras Forest College, founded in Coimbatore in 1912, was the second Rangers College, training foresters for South India. Revived in 1945 and renamed the Southern Forest Rangers College (SFRC) in 1955, it trained over 4,000 rangers until 1987. CASFOS Coimbatore was established in 1980 and integrated under IGNFA in 2022.
-                    </p>
-                  </div>
-                  <div className="history-images"> {/* Container for historical images */}
-                    <img
-                      src="/images/casfos_coimbatore_img4.jpg" // Path to historical campus image
-                      alt="Historical Campus" // Alt text for accessibility
-                      className="section-image" // Styling class
-                      onError={(e) => (e.target.src = '/images/fallback.jpg')} // Fallback image if loading fails
-                    />
-                    <img
-                      src="/images/casfos_coimbatore_img5.jpg" // Path to forest campus image
-                      alt="Forest Campus" // Alt text for accessibility
-                      className="section-image" // Styling class
-                      onError={(e) => (e.target.src = '/images/fallback.jpg')} // Fallback image if loading fails
-                    />
-                    <img
-                      src="/images/casfos_coimbatore_img3.jpg" // Path to training facility image
-                      alt="Training Facility" // Alt text for accessibility
-                      className="section-image" // Styling class
-                      onError={(e) => (e.target.src = '/images/fallback.jpg')} // Fallback image if loading fails
-                    />
-                  </div>
-                  <div className="history-text-continued"> {/* Placeholder for continued text */}
-                    <p className="update-info"> {/* Placeholder for update information */}
-                    </p>
-                  </div>
-                </div>
+          {/* History Section */}
+          <section id="history" style={{ ...styles.section, backgroundColor: '#f5f5f5' }}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  History of the Academy
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
               </div>
-            </section>
+              <div style={styles.historyContent}>
+                <div style={styles.historyMain}>
+                  <h3 style={styles.subsectionTitle}>Genesis of Forest Training in Coimbatore</h3>
+                  <p style={styles.aboutParagraph}>
+                    It is interesting to note that CASFOS Coimbatore played a major role in forestry education and training in South India. The Forestry Education commenced in India in 1867, based on the recommendation of Sir Dietrich Brandis, the First Inspector General of Forests. A Forest school was set up to train Rangers and Foresters at Dehradun in the year 1878 by the then North West Province which was later taken over by the Government of India and designated as the Imperial Forest College.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    Next milestone in Forestry Education in India was the establishment of Madras Forest College at Coimbatore in the year 1912 by the then Madras Presidency with Mr. F. L. C. Cowley Brown, IFS, as its first Principal. Mr. F. A. Lodge, then Conservator of Forests in Coimbatore was instrumental in the establishment of this College. It was the second Forest Rangers College in India, after DehraDun. It was set up to meet the rising demand of trained Foresters in the country, especially those from South India.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    During the Second World War, the Madras Forest College was closed down and was revived in 1945 by Mr. C. R. Ranganathan, IFS, as its first Indian Principal. It was taken over by the Government of India in 1948 to train more number of Forest Ranger Trainees as the demand was going up after Independence.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    The historic Forest Campus that housed the MFC later became the “Southern Forest Rangers College” (SFRC) in the year 1955. Under the aegis of Government of India, 31 batches of Forest Rangers passed out from the SFRC after completing rigorous training of two years. SFRC has trained more than 4000 Forest Ranger officers between 1912 and 1988. The trainees included not only Indians but also from Ceylon, Afghanistan, Uganda, Malaya, Ghana, Fiji, Laos, Sierra Leone, British Guyana, etc.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    Due to policy decision of the Government of India, that imparting Induction and In-service Training to the Forestry Personnel below the rank of Assistant Conservator of Forests should rest with the State Government, the training activities came to an end on 31.12.1987 in the Southern Forest Rangers College.
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    State Forest Service Officers were trained at the College, erstwhile Indian Forest College, Dehradun and State Forest Service College, Burnihat. With the advent of various developmental schemes in the Forestry sector during the IV and V Five year plans, and launching of the Social Forestry Projects in many States, the Government of India felt the urgency of starting two more institutions to train the increasing number of officers specially from the State Services, and as a sequel to this the State Forest Service College, Coimbatore was established on 25th January, 1980 under the aegis of Directorate of Forest Education, Ministry of Environment & Forests. Later it was rechristened as Central Academy for State Forest Service (CASFOS).
+                  </p>
+                  <p style={styles.aboutParagraph}>
+                    CASFOS Coimbatore was brought under the single administrative control of Director, IGNFA, Dehradun along with the other Academies as integration of all Forest Training Academies under a single command. (Vide order no. 15-15/2018-RT, dated 03-02-2022)
+                  </p>
+                  <h3 style={styles.subsectionTitle}>Mandate</h3>
+                  <ul style={{ listStyle: 'none', padding: 0 }}>
+                    {[
+                      'To impart Professional training to the newly recruited State Forest Service officers and to bring them up as capable of meeting future challenges in the sphere of Forests, Wildlife & Environment through Capacity building & Knowledge sharing',
+                      'Strengthening existing management process and disseminating new concepts through continued education, in the shape of In-service Courses to augment their managerial skills with administrative & technical acumen.',
+                      'Conducting Special & Theme based Workshops and Refresher Courses covering emerging issues in forestry research and technology.',
+                      'Re-orienting forest education in tune with requisite parameters of ecology and environment.'
+                    ].map((item, index) => (
+                      <li key={index} style={styles.listItem}>
+                        <span style={styles.listIcon}>✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+              </div>
+            </div>
+          </section>
 
-            {/* How to Reach Section */}
-            <section id="reach" className="content-section"> {/* Reach section */}
-              <div className="section-container"> {/* Container for section content */}
-                <h2 className="section-title">How to Reach</h2> {/* Section title */}
-                <div className="reach-content"> {/* Content wrapper */}
-                  <div className="reach-text"> {/* Text content */}
-                    <p> {/* Location details */}
-                      Located in the scenic Forest Campus, R.S. Puram, Coimbatore, Tamil Nadu, CASFOS is 5 km from Coimbatore Railway Station and 12 km from Coimbatore International Airport.
+          {/* How to Reach Section */}
+          <section id="reach" style={styles.section}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  How To Reach
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
+              </div>
+              <div style={{
+                backgroundColor: '#e8f5e9',
+                borderRadius: '8px',
+                padding: '2rem',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={styles.reachContent}>
+                  <div style={styles.reachText}>
+                    <p style={styles.aboutParagraph}>
+                      Setup in the picturesque Forest Campus, R. S. Puram, Coimbatore,
+                      Tamil Nadu, the Central Academy for State Forest Service is
+                      situated at a distance of 5 km from the Coimbatore Railway Station
+                      and 12 Km from Coimbatore International Airport.
                     </p>
-                    <p> {/* Additional campus information */}
-                      The campus hosts the Tamil Nadu Forest Academy (TNFA), the Institute of Forest Genetics & Tree Breeding (IFGTB), and the renowned GASS Museum, making it a hub for forestry education and research.
-                    </p>
+                    <div style={{
+                      backgroundColor: 'white',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      borderLeft: '4px solid #2e7d32'
+                    }}>
+                      <h4 style={{ fontWeight: 600, color: '#2c3e50', marginBottom: '1rem' }}>
+                        Location Highlights:
+                      </h4>
+                      <ul style={{ listStyle: 'none', padding: 0 }}>
+                        <li style={styles.listItem}>• Tamil Nadu Forest Academy (TNFA)</li>
+                        <li style={styles.listItem}>• Institute of Forest Genetics & Tree breeding (IFGTB)</li>
+                        <li style={styles.listItem}>• Famous 'GASS MUSEUM'</li>
+                      </ul>
+                    </div>
                   </div>
-                  <div className="map-container"> {/* Container for Google Maps iframe */}
+                  <div style={styles.reachMap}>
                     <iframe
-                      src="http://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.2649732361087!2d76.93796778831465!3d11.018735325854964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba858dde76380d3%3A0xbe08bb837838e990!2sCentral%20Academy%20for%20State%20Forest%20Service!5e0!3m2!1sen!2sin!4v1744637852810!5m2!1sen!2sin" // Google Maps embed URL
-                      width="600" // Iframe width
-                      height="450" // Iframe height
-                      style={{ border: 0 }} // Removes border
-                      allowFullScreen="" // Enables fullscreen mode
-                      loading="lazy" // Lazy loads the iframe
-                      referrerPolicy="no-referrer-when-downgrade" // Sets referrer policy
+                      src="http://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.2649732361087!2d76.93796778831465!3d11.018735325854964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba858dde76380d3%3A0xbe08bb837838e990!2sCentral%20Academy%20for%20State%20Forest%20Service!5e0!3m2!1sen!2sin!4v1744637852810!5m2!1sen!2sin"
+                      width="600"
+                      height="450"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
                     />
                   </div>
                 </div>
               </div>
-            </section>
+            </div>
+          </section>
 
-            {/* Contact Section */}
-            <section id="contact" className="content-section alt-bg"> {/* Contact section with alternate background */}
-              <div className="section-container"> {/* Container for section content */}
-                <h2 className="section-title">Contact Us</h2> {/* Section title */}
-                <div className="contact-content"> {/* Content wrapper */}
-                  <div className="contact-card"> {/* Card for contact information */}
-                    <h3 className="contact-heading"> {/* Contact heading */}
-                      Central Academy for State Forest Service <br />
-                      Directorate of Forest Education <br />
-                      Ministry of Environment, Forest and Climate Change <br />
-                      Government of India
-                    </h3>
-                    <div className="contact-info"> {/* Container for contact details */}
-                      <div className="contact-item"> {/* Email contact item */}
-                        <i className="bx bx-envelope" /> {/* Envelope icon */}
-                        <p>
-                          <strong>Email:</strong> casfos-coimbatore@gov.in | casfoscbe-trng@gov.in {/* Email addresses */}
-                        </p>
+          {/* Contact Section */}
+          <section id="contact" style={{ ...styles.section, backgroundColor: '#f5f5f5' }}>
+            <div style={styles.sectionContainer}>
+              <div>
+                <h2 style={styles.sectionTitle}>
+                  Contact Us
+                  <span style={styles.sectionTitleLine}></span>
+                </h2>
+              </div>
+              <div style={styles.contactGrid}>
+                <div style={styles.contactCard}>
+                  <div style={styles.contactHeader}>
+                    <h3 style={{ margin: 0 }}>The Principal,</h3>
+                    <h3 style={{ margin: 0 }}>Central Academy for State Forest Service Coimbatore,</h3>
+                    <h3 style={{ margin: 0 }}>Directorate of Forest Education,</h3>
+                    <h3 style={{ margin: 0 }}>Ministry of Environment, Forest and Climate Change,</h3>
+                    <h3 style={{ margin: 0 }}>Government of India</h3>
+                  </div>
+                  <div style={styles.contactBody}>
+                    <div style={styles.contactItem}>
+                      <FiMail style={styles.contactIcon} />
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0' }}>Email</h4>
+                        <p style={{ margin: 0 }}>casfos-coimbatore@gov.in</p>
+                        <p style={{ margin: '0.3rem 0 0 0' }}>casfoscbe-trng@gov.in</p>
                       </div>
-                      <div className="contact-item"> {/* Phone contact item */}
-                        <i className="bx bx-phone" /> {/* Phone icon */}
-                        <p>
-                          <strong>Phone:</strong> 0422-2450313 {/* Phone number */}
-                        </p>
+                    </div>
+                    <div style={styles.contactItem}>
+                      <FiPhone style={styles.contactIcon} />
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0' }}>Phone</h4>
+                        <p style={{ margin: 0 }}>0422-2450313</p>
                       </div>
-                      <div className="contact-item"> {/* Address contact item */}
-                        <i className="bx bx-map" /> {/* Map icon */}
-                        <p>
-                          <strong>Address:</strong> Forest Campus, R.S. Puram, Coimbatore - 641002, Tamil Nadu {/* Physical address */}
-                        </p>
+                    </div>
+                    <div style={styles.contactItem}>
+                      <FiMapPin style={styles.contactIcon} />
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0' }}>Address</h4>
+                        <p style={{ margin: 0 }}>Forest Campus, R. S. Puram</p>
+                        <p style={{ margin: '0.3rem 0 0 0' }}>Coimbatore, Tamil Nadu - 641002</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </section>
-          </main>
-        </section>
-      </div>
-    </>
+            </div>
+          </section>
+        </main>
+      </section>
+
+      {/* Notification Popup Placeholder (uncomment if implemented) */}
+      {/*
+      {showNotifications && (
+        <div className="popup-overlay">
+          <div className="notification-popup">
+            <div className="notification-header">
+              <h2>Recent Notifications</h2>
+              <div>
+                {notifications.length > 0 && (
+                  <button className="clear-all-button" onClick={handleClearAll}>
+                    Clear All
+                  </button>
+                )}
+                <button className="close-button" onClick={toggleNotificationPanel}>
+                  Close
+                </button>
+              </div>
+            </div>
+            {notifications.length === 0 ? (
+              <p className="no-notifications">No notifications available</p>
+            ) : (
+              <div className="notification-list">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className={`notification-banner ${
+                      notification.action.includes('approved') ? 'approved' : 'rejected'
+                    }`}
+                  >
+                    <div className="notification-summary">
+                      <span className="notification-title">
+                        {formatNotificationTitle(notification)}
+                        <span className="notification-time">
+                          {new Date(notification.actionTime).toLocaleString()}
+                        </span>
+                      </span>
+                      <div>
+                        <button
+                          className="expand-button"
+                          onClick={() => toggleExpand(notification._id)}
+                        >
+                          {expandedNotification === notification._id ? '▲' : '▼'}
+                        </button>
+                        <button
+                          className="clear-button"
+                          onClick={() => handleClearNotification(notification._id)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    {expandedNotification === notification._id && renderNotificationDetails(notification)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      */}
+    </div>
   );
 };
 
-// -------------------
-// Styles
-// -------------------
-/**
- * CSS styles for the dashboard and notification components
- */
-const styles = {
-  notificationPanel: { // Styles for notification panel
-    maxWidth: "800px", // Maximum width of 800px
-    margin: "20px auto", // Centered with 20px margin
-    padding: "20px", // 20px padding
-    borderRadius: "10px", // Rounded corners
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", // Subtle shadow
-    backgroundColor: "#fff", // White background
-    maxHeight: "500px", // Maximum height with scroll
-    overflowY: "auto", // Vertical scrollbar if needed
-  },
-  notificationHeader: { // Styles for notification header
-    display: "flex", // Flexbox layout
-    justifyContent: "space-between", // Space between items
-    alignItems: "center", // Center vertically
-    marginBottom: "15px", // Bottom margin
-    position: "sticky", // Sticks to top when scrolling
-    top: 0, // Sticks at top
-    backgroundColor: "#fff", // White background
-    padding: "10px 0", // Vertical padding
-    zIndex: 1, // Ensures header stays above content
-  },
-  notificationList: { // Styles for notification list
-    maxHeight: "400px", // Maximum height with scroll
-    overflowY: "auto", // Vertical scrollbar
-    paddingRight: "5px", // Right padding for scrollbar
-  },
-  notificationBanner: { // Styles for individual notification
-    padding: "15px", // 15px padding
-    marginBottom: "10px", // Bottom margin
-    borderRadius: "5px", // Rounded corners
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Subtle shadow
-  },
-  notificationSummary: { // Styles for notification summary
-    display: "flex", // Flexbox layout
-    justifyContent: "space-between", // Space between items
-    alignItems: "center", // Center vertically
-  },
-  notificationTitle: { // Styles for notification title
-    flex: 1, // Takes available space
-    fontWeight: "bold", // Bold text
-    display: "flex", // Flexbox for layout
-    flexDirection: "column", // Stack items vertically
-  },
-  notificationTime: { // Styles for notification timestamp
-    fontSize: "0.8em", // Smaller font size
-    color: "#666", // Gray color
-    fontWeight: "normal", // Normal weight
-    marginTop: "5px", // Top margin
-  },
-  clearAllButton: { // Styles for clear all notifications button
-    padding: "8px 15px", // Padding
-    backgroundColor: "#dc3545", // Red background
-    color: "#fff", // White text
-    border: "none", // No border
-    borderRadius: "5px", // Rounded corners
-    cursor: "pointer", // Pointer cursor
-    fontSize: "14px", // Font size
-    fontWeight: "bold", // Bold text
-  },
-  expandButton: { // Styles for expand notification button
-    padding: "5px 10px", // Padding
-    backgroundColor: "#007bff", // Blue background
-    color: "#fff", // White text
-    border: "none", // No border
-    borderRadius: "5px", // Rounded corners
-    cursor: "pointer", // Pointer cursor
-    marginRight: "10px", // Right margin
-    minWidth: "30px", // Minimum width
-  },
-  clearButton: { // Styles for clear single notification button
-    padding: "5px 10px", // Padding
-    backgroundColor: "#dc3545", // Red background
-    color: "#fff", // White text
-    border: "none", // No border
-    borderRadius: "5px", // Rounded corners
-    cursor: "pointer", // Pointer cursor
-    minWidth: "30px", // Minimum width
-  },
-  notificationDetails: { // Styles for expanded notification details
-    marginTop: "10px", // Top margin
-    padding: "10px", // Padding
-    backgroundColor: "#f9f9f9", // Light gray background
-    borderRadius: "5px", // Rounded corners
-    fontSize: "0.9em", // Slightly smaller font
-  },
-  noNotifications: { // Styles for no notifications message
-    textAlign: "center", // Centered text
-    color: "#666", // Gray color
-    padding: "20px", // Padding
-  },
-  usernameContainer: { // Styles for username container
-    display: "flex", // Flexbox layout
-    alignItems: "center", // Center vertically
-    gap: "10px", // Space between items
-    fontSize: "14px", // Font size
-    color: "#555", // Gray color
-  },
-  userIcon: { // Styles for user icon
-    fontSize: "30px", // Larger icon size
-    color: "#007BFF", // Blue color
-  },
-  username: { // Styles for username text
-    fontWeight: "bold", // Bold text
-    fontSize: "18px", // Font size
-  },
-  container: { // Styles for generic container
-    maxWidth: "800px", // Maximum width
-    margin: "20px auto", // Centered with margin
-    padding: "20px", // Padding
-    borderRadius: "10px", // Rounded corners
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", // Subtle shadow
-    backgroundColor: "#fff", // White background
-  },
-  header: { // Styles for header
-    display: "flex", // Flexbox layout
-    justifyContent: "space-between", // Space between items
-    alignItems: "center", // Center vertically
-    marginBottom: "10px", // Bottom margin
-  },
-  subtitle: { // Styles for subtitle
-    color: "#666", // Gray color
-    fontSize: "14px", // Font size
-    marginBottom: "20px", // Bottom margin
-  },
-  cardContainer: { // Styles for card container
-    display: "flex", // Flexbox layout
-    gap: "15px", // Space between cards
-  },
-  card: { // Styles for individual cards
-    flex: "1", // Equal width
-    padding: "15px", // Padding
-    borderRadius: "10px", // Rounded corners
-    textAlign: "center", // Centered text
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Subtle shadow
-  },
-  icon: { // Styles for card icons
-    width: "50px", // Fixed width
-    height: "50px", // Fixed height
-    borderRadius: "50%", // Circular shape
-    margin: "0 auto 10px", // Centered with bottom margin
-    display: "flex", // Flexbox for centering
-    justifyContent: "center", // Center horizontally
-    alignItems: "center", // Center vertically
-  },
-  iconStyle: { // Styles for icon within cards
-    fontSize: "24px", // Font size
-    color: "#fff", // White color
-  },
-};
-
-// Exports the component as default
 export default AssetManagerDashboard;

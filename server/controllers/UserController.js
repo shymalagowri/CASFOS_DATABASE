@@ -19,9 +19,9 @@ const RejectedUser = require('../model/RejectedUserModel');
 const HeadOfOfficeModel = require('../model/HeadOfOfficeModel');
 const PrincipalModel = require('../model/PrincipalModel');
 const AssetManagerModel = require('../model/AssetManagerModel');
-const storekeeperModel = require('../model/StorekeeperModel');
+const storekeeperModel = require('../model/storekeeperModel');
 const FacultyEntryStaffModel = require('../model/FacultyEntryStaffModel');
-const facultyverifierModel = require('../model/FacultyVerifierModel');
+const facultyverifierModel = require('../model/facultyverifierModel');
 const ViewerModel = require('../model/ViewerModel');
 
 /**
@@ -275,6 +275,74 @@ const getTemporaryUsers = async (req, res) => {
   }
 };
 
+/**
+ * Changes the user's password after validating the old password
+ * @param {Object} req - Express request object containing name, role, oldPassword, and newPassword
+ * @param {Object} res - Express response object
+ */
+const changePassword = async (req, res) => {
+  const { name, role, oldPassword, newPassword } = req.body;
+
+  // Validate required fields
+  if (!name || !role || !oldPassword || !newPassword) {
+    return res.status(400).json({ message: 'Name, role, old password, and new password are required' });
+  }
+
+  try {
+    // Select the appropriate model based on role
+    let Model;
+    switch (role) {
+      case 'headofoffice':
+        Model = HeadOfOfficeModel;
+        break;
+      case 'principal':
+        Model = PrincipalModel;
+        break;
+      case 'assetmanager':
+        Model = AssetManagerModel;
+        break;
+      case 'storekeeper':
+        Model = storekeeperModel;
+        break;
+      case 'facultyentrystaff':
+        Model = FacultyEntryStaffModel;
+        break;
+      case 'facultyverifier':
+        Model = facultyverifierModel;
+        break;
+      case 'viewer':
+        Model = ViewerModel;
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    // Find user by username
+    const user = await Model.findOne({ name });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect old password' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating password', error: error.message });
+  }
+};
+
 // Export all controller functions
 module.exports = {
   registerUser,
@@ -282,4 +350,5 @@ module.exports = {
   approveUser,
   rejectUser,
   getTemporaryUsers,
+  changePassword,
 };

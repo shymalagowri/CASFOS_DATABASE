@@ -1,14 +1,3 @@
-/**
- * This file defines the Express routes for user-related operations.
- * It includes endpoints for:
- *   - Fetching all temporary user registrations
- *   - Approving a user registration
- *   - Registering a new user
- *   - Rejecting a user registration
- *   - Logging in a user
- * The routes delegate logic to the corresponding controller functions in UserController.
- */
-
 const express = require('express');
 const router = express.Router();
 const {
@@ -17,7 +6,8 @@ const {
     registerUser,
     loginUser,
     rejectUser,
-} = require('../controllers/UserController');
+    changePassword,
+} = require('../controllers/userController');
 
 // Route for getting all temporary users
 router.get('/registrations', getTemporaryUsers);
@@ -28,10 +18,12 @@ router.post('/approve/:id', approveUser);
 // Route for user registration
 router.post('/register', registerUser);
 
-// Route for rejecting a user registration
 router.post('/reject/:id', rejectUser);
 
 // Route for user login
 router.post('/login', loginUser);
+
+// change password for HOO
+router.put('/change-password', changePassword);
 
 module.exports = router;

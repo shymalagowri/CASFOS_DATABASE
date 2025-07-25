@@ -245,6 +245,9 @@ const FacultyUpdation = () => {
   // Render faculty details in popup
   const renderPopupContent = (data) => {
     const renderValue = (value, key) => {
+      if (key === "status" && value === "retired") {
+        return "Repatriated";
+      }
       if (key === "photograph" && typeof value === "string") {
         const imageUrl = `http://${ip}:${port}/uploads/${value.split("\\").pop()}`;
         return <img src={imageUrl} alt="Photograph" style={{ width: "100px", height: "100px", objectFit: "cover" }} />;
@@ -648,7 +651,7 @@ const FacultyUpdation = () => {
                   >
                     <option value="">Select</option>
                     <option value="serving">Serving</option>
-                    <option value="retired">Retired</option>
+                    <option value="retired">Repatriated</option>
                   </select>
                 </div>
                 <div style={filterStyles.filterItem}>

@@ -26,12 +26,12 @@ import '../styles/Util.css';
 
 // Define role options for selection
 const ROLE_OPTIONS = [
-  { value: 'headofoffice', label: 'Head of Office' },
   { value: 'principal', label: 'Principal' },
+  // { value: 'headofoffice', label: 'Head of Office' },
   { value: 'assetmanager', label: 'Asset Manager' },
   { value: 'storekeeper', label: 'Storekeeper' },
-  { value: 'facultyentrystaff', label: 'Faculty Entry Staff' },
-  { value: 'facultyverifier', label: 'Faculty Verifier' },
+  { value: 'facultyentrystaff', label: 'Faculty Data Entry Staff' },
+  { value: 'facultyverifier', label: 'Faculty Data Verifier' },
   { value: 'viewer', label: 'Viewer' },
 ];
 

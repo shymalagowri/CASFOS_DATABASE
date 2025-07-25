@@ -546,7 +546,7 @@ const FacultyView = () => { // Define FacultyView functional component
       {/* Sidebar navigation */}
       <section id="sidebar">
         <a href="#" className="brand">
-          <span className="text">FACULTY ENTRY STAFF</span>
+          <span className="text">FACULTY DATA ENTRY STAFF</span>
         </a>
         <ul className="side-menu top">
           <li>

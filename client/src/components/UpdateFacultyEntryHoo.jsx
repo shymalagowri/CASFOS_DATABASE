@@ -54,9 +54,9 @@ const domainOptions = {
     "General Biology/ Forest Botany & Taxonomy",
     "Forest Statistics/Mathematics",
     "Computer Application, Remote Sensing and GIS in Forestry",
-    "Urban Forestry/Recreation Forestry & Land Scaping",
+    "Urban Forestry/Recreation Forestry & Land Scaping"
   ],
-  Environment: [
+  "Environment": [
     "Environmental Laws & Management",
     "Climate Change: Adaptation & Mitigation",
     "Wasteland Management",
@@ -67,14 +67,14 @@ const domainOptions = {
     "Sustainable Development Goals",
     "Green Energy",
     "Ecosystem Health",
-    "Others",
+    "Others"
   ],
   "Disaster Management": [
     "Forest Fire Management & Damage assessment",
     "Cyclone",
     "Flood",
     "Desertification",
-    "Others",
+    "Others"
   ],
   "Human Resource Development": [
     "Time Management",
@@ -86,7 +86,7 @@ const domainOptions = {
     "Emotional Intelligence",
     "Gender Sensitization",
     "Building competencies for personal Excellence",
-    "Others",
+    "Others"
   ],
   "Health and Fitness": [
     "First Aid",
@@ -94,7 +94,7 @@ const domainOptions = {
     "Physical, mental and Social Health",
     "Stress Management",
     "Yoga and Meditation",
-    "Others",
+    "Others"
   ],
   "Ethics and Public Governance": [
     "Public administration, Public Grievance and Public Finance",
@@ -107,7 +107,7 @@ const domainOptions = {
     "Public Relations, Crisis control",
     "E-governance",
     "Project Implementation and Management",
-    "Others",
+    "Others"
   ],
   "Jurisprudence (Acts and Rules)": [
     "The Bharatiya Nagarik Suraksha Sanhita (BNSS)",
@@ -116,13 +116,13 @@ const domainOptions = {
     "POSH Act, 2013",
     "Right to Information (RTI) Act, 2005",
     "Cyber Security Laws",
-    "Others",
+    "Others"
   ],
   "CCS Rules and Regulation": [
     "Service Rules and matters",
     "Conduct Rules",
     "Disciplinary Proceedings",
-    "Others",
+    "Others"
   ],
   "Media Management": [
     "The Art of Interacting with Print and Electronic Media",
@@ -130,8 +130,20 @@ const domainOptions = {
     "Media Relations and Image Management",
     "Proactive Media Engagement",
     "Social Media Management",
-    "Others",
+    "Others"
   ],
+  "Engineering": [
+    "Structural Engineering",
+    "Environmental Engineering",
+    "Geotechnical Engineering",
+    "Transportation Engineering",
+    "Water Resources Engineering",
+    "Construction Management",
+    "Surveying and Geomatics",
+    "Materials Science and Engineering",
+    "Energy Systems Engineering",
+    "Others"
+  ]
 };
 
 function UpdateFacultyEntryHoo() {
@@ -209,6 +221,11 @@ function UpdateFacultyEntryHoo() {
     staffid: formattedFacultyData.staffid || "",
   });
   const [savingStatus, setSavingStatus] = useState("");
+  const [previewImage, setPreviewImage] = useState(
+    formattedFacultyData?.photograph
+      ? `http://${ip}:${port}/Uploads/${formattedFacultyData.photograph.split("\\").pop()}`
+      : ""
+  );
 
   // State for domain expertise
   const [domainExpertise, setDomainExpertise] = useState(() => {
@@ -489,7 +506,7 @@ function UpdateFacultyEntryHoo() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 50 * 1024) {
+      if (file.size > 500 * 1024) {
         Swal.fire({
           icon: "error",
           title: "File Size Error",
@@ -498,6 +515,7 @@ function UpdateFacultyEntryHoo() {
         return;
       }
       setFacultyDetails({ ...facultyDetails, photograph: file });
+      setPreviewImage(URL.createObjectURL(file));
     }
   };
 
@@ -686,6 +704,10 @@ function UpdateFacultyEntryHoo() {
     loadingIcon: { fontSize: "16px", color: "#007BFF" },
     successIcon: { fontSize: "16px", color: "#28a745" },
     errorIcon: { fontSize: "16px", color: "#dc3545" },
+    photographPreview: {
+      maxWidth: "150px",
+      margin: "10px 0",
+    },
   };
 
   return (
@@ -863,7 +885,6 @@ function UpdateFacultyEntryHoo() {
                         onChange={handleInputChange}
                         required
                       />
-
                       <label>Communication Address:</label>
                       <input
                         type="text"
@@ -893,6 +914,15 @@ function UpdateFacultyEntryHoo() {
                         accept="image/*"
                         onChange={handleFileChange}
                       />
+                      {previewImage ? (
+                        <img
+                          src={previewImage}
+                          alt="Faculty Photograph"
+                          style={styles.photographPreview}
+                        />
+                      ) : (
+                        <p>No photograph uploaded</p>
+                      )}
                       <label>Status:</label>
                       <select
                         name="status"
@@ -1469,6 +1499,15 @@ function UpdateFacultyEntryHoo() {
                         accept="image/*"
                         onChange={handleFileChange}
                       />
+                      {previewImage ? (
+                        <img
+                          src={previewImage}
+                          alt="Faculty Photograph"
+                          style={styles.photographPreview}
+                        />
+                      ) : (
+                        <p>No photograph uploaded</p>
+                      )}
                       <label>Status:</label>
                       <select
                         name="status"
@@ -1734,6 +1773,15 @@ function UpdateFacultyEntryHoo() {
                         accept="image/*"
                         onChange={handleFileChange}
                       />
+                      {previewImage ? (
+                        <img
+                          src={previewImage}
+                          alt="Faculty Photograph"
+                          style={styles.photographPreview}
+                        />
+                      ) : (
+                        <p>No photograph uploaded</p>
+                      )}
                       <label>Status:</label>
                       <select
                         name="status"

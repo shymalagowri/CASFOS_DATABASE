@@ -706,7 +706,7 @@ const FacultyVerify = () => {
         {/* Sidebar navigation */}
         <section id="sidebar"> {/* Sidebar section */}
           <a href="#" className="brand"> {/* Brand link (placeholder) */}
-            <span className="text">FACULTY VERIFIER</span> {/* Brand name */}
+            <span className="text">FACULTY DATA VERIFIER</span> {/* Brand name */}
           </a>
           <ul className="side-menu top"> {/* Primary navigation links */}
             <li> {/* Home link */}

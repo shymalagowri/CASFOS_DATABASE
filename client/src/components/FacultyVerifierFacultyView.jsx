@@ -329,7 +329,7 @@ const facultyverifierFacultyView = () => {
       {/* Sidebar */}
       <section id="sidebar">
         <a href="#" className="brand">
-          <span className="text">FACULTY VERIFIER</span>
+          <span className="text">FACULTY DATA VERIFIER</span>
         </a>
         <ul className="side-menu top">
           <li>
